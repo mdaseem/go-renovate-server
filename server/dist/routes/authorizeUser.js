@@ -16,7 +16,7 @@ const express_1 = __importDefault(require("express"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const userModels_1 = require("../models/userModels");
 const router = express_1.default.Router();
-router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const data = req.body.data;
     const allUsers = yield userModels_1.Users.find({});
     const validUserData = allUsers === null || allUsers === void 0 ? void 0 : allUsers.find((item) => (item === null || item === void 0 ? void 0 : item.userEmail) === (data === null || data === void 0 ? void 0 : data.userEmail) &&

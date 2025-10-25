@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { Users } from "../models/userModels";
 
 const router: Router = express.Router();
-router.post("/login", async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   const data = req.body.data;
   const allUsers = await Users.find({});
   const validUserData = allUsers?.find(

@@ -12,7 +12,9 @@ const prductRoutes_1 = __importDefault(require("./routes/prductRoutes"));
 const addUser_1 = __importDefault(require("./routes/addUser"));
 const authorizeUser_1 = __importDefault(require("./routes/authorizeUser"));
 dotenv_1.default.config();
-mongoose_1.default.connect('mongodb://127.0.0.1:27017/myBuy', {});
+mongoose_1.default.connect("mongodb+srv://go-renovate-userDB:3AsOY7MQsPeCNaYV@cluster0.cjpxkja.mongodb.net/")
+    .then(() => console.log("✅ Connected to MongoDB Atlas"))
+    .catch(err => console.error("❌ Connection error:", err));
 mongoose_1.default.connection.on("open", () => {
     console.log(`Online Training DB connected !`);
 });

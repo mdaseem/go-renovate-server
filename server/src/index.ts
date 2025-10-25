@@ -1,5 +1,5 @@
 import express, { Express, Request, Response } from "express";
-import dotenv from "dotenv";
+import dotenv from "dotenv"; 
 import cors from "cors";
 import mongoose from "mongoose";
 import userRoutes from "./routes/userRoutes";
@@ -10,7 +10,9 @@ import authorize from "./routes/authorizeUser"
 
 
 dotenv.config();
-mongoose.connect('mongodb://127.0.0.1:27017/myBuy', {});
+mongoose.connect("mongodb+srv://go-renovate-userDB:3AsOY7MQsPeCNaYV@cluster0.cjpxkja.mongodb.net/")
+  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .catch(err => console.error("❌ Connection error:", err));
 
 mongoose.connection.on("open", () => {
   console.log(`Online Training DB connected !`);
