@@ -19,7 +19,7 @@ mongoose_1.default.connection.on("open", () => {
     console.log(`Online Training DB connected !`);
 });
 const app = (0, express_1.default)();
-const port = process.env.SERVER_PORT;
+const port = process.env.SERVER_PORT || 3000;
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use("/user", userRoutes_1.default);

@@ -19,7 +19,7 @@ mongoose.connection.on("open", () => {
 });
 
 const app: Express = express();
-const port = process.env.SERVER_PORT;
+const port = process.env.SERVER_PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
