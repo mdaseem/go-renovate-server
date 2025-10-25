@@ -8,8 +8,7 @@ router.post("/", async (req: Request, res: Response) => {
   const allUsers = await Users.find({});
   const validUserData = allUsers?.find(
     (item) =>
-      item?.userEmail === data?.userEmail &&
-      item?.userPassword === data?.userPassword
+      item?.userEmail === data?.userEmail
   );
   if (validUserData) {
     let payload = { name: data, lastLogin: "Monday 25th" };
