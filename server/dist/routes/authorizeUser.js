@@ -17,16 +17,21 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const userModels_1 = require("../models/userModels");
 const router = express_1.default.Router();
 router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const data = req.body.data;
+    const data = req.body;
     const allUsers = yield userModels_1.Users.find({});
-    const validUserData = allUsers === null || allUsers === void 0 ? void 0 : allUsers.find((item) => (item === null || item === void 0 ? void 0 : item.userEmail) === (data === null || data === void 0 ? void 0 : data.userEmail));
+    const userFound = allUsers === null || allUsers === void 0 ? void 0 : allUsers.find((item) => (item === null || item === void 0 ? void 0 : item.userEmail) === (data === null || data === void 0 ? void 0 : data.userEmail) &&
+        (item === null || item === void 0 ? void 0 : item.userPassword) === (data === null || data === void 0 ? void 0 : data.password));
+    const validUserData = data.isGoogleLogin || userFound;
+    if ((data === null || data === void 0 ? void 0 : data.password) && !userFound) {
+        return res.json({ message: "Invalid password", status: false });
+    }
     if (validUserData) {
-        let payload = { name: data, lastLogin: "Monday 25th" };
-        jsonwebtoken_1.default.sign(payload, process.env.SECRET_KEY || "OtherSecretKey", { expiresIn: "2 Days" }, (err, token) => {
+        let payload = { name: data };
+        jsonwebtoken_1.default.sign(payload, "any_random_string_generated_once", { expiresIn: "2 Days" }, (err, token) => {
             if (err)
                 console.log(err);
             else
-                return res.json({ token, status: true, validUserData });
+                return res.json({ token, status: true });
         });
     }
     else {

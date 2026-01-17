@@ -4,25 +4,30 @@ import { Users } from "../models/userModels";
 
 const router: Router = express.Router();
 router.post("/", async (req: Request, res: Response) => {
-  const data = req.body.data;
+  const data = req.body;
   const allUsers = await Users.find({});
-  const validUserData = allUsers?.find(
+  const userFound = allUsers?.find(
     (item) =>
-      item?.userEmail === data?.userEmail
+      item?.userEmail === data?.userEmail &&
+      item?.userPassword === data?.password
   );
+  const validUserData = data.isGoogleLogin || userFound;
+  if (data?.password && !userFound) {
+    return res.json({ message: "Invalid password", status: false });
+  }
   if (validUserData) {
-    let payload = { name: data, lastLogin: "Monday 25th" };
+    let payload = { name: data };
     jwt.sign(
       payload,
-      process.env.SECRET_KEY || "OtherSecretKey",
+      "any_random_string_generated_once",
       { expiresIn: "2 Days" },
       (err, token) => {
         if (err) console.log(err);
-        else return res.json({ token, status: true, validUserData });
+        else return res.json({ token, status: true });
       }
     );
   } else {
-    res.json({ message: "Invalid user",status: false });
+    res.json({ message: "Invalid user", status: false });
   }
 });
 
