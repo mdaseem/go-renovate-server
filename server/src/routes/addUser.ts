@@ -6,7 +6,7 @@ router.post("/", async (req: Request, res: Response) => {
   const newUser = req.body.data;
   const newUserInstance = new Users({ ...newUser });
   await newUserInstance.save();
-  res.json({ msg: "User added successfully !", status: true, newUser });
+  res.json({ msg: "User added successfully !", status: true, newUser: newUser.userEmail });
 });
 
 export default router;

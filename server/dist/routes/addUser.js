@@ -19,6 +19,6 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const newUser = req.body.data;
     const newUserInstance = new userModels_1.Users(Object.assign({}, newUser));
     yield newUserInstance.save();
-    res.json({ msg: "User added successfully !", status: true, newUser });
+    res.json({ msg: "User added successfully !", status: true, newUser: newUser.userEmail });
 }));
 exports.default = router;
