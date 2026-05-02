@@ -36,7 +36,7 @@ app.use("/products", authMiddleware_1.requireAuth, prductRoutes_1.default);
 const server = http_1.default.createServer(app);
 const io = new socket_io_1.Server(server, {
     cors: {
-        origin: "http://localhost:3000",
+        origin: ["http://localhost:3000", "https://go-renovate.vercel.app"],
         methods: ["GET", "POST"],
         credentials: true,
     },
