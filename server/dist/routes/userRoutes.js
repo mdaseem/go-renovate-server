@@ -14,10 +14,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const userModels_1 = require("../models/userModels");
+const chatUserModel_1 = require("../models/chatUserModel");
 const router = express_1.default.Router();
 router.get("/userData/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     const user = yield userModels_1.Users.findOne({ _id: id });
     res.json(user);
+}));
+router.get("/userlist", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const users = yield chatUserModel_1.ChatUsers.find({});
+    res.json(users);
 }));
 exports.default = router;

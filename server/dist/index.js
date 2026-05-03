@@ -29,7 +29,7 @@ app.use((0, cors_1.default)({
 }));
 // app.use(cors());
 app.use(express_1.default.json());
-app.use("/user", userRoutes_1.default);
+app.use("/user", authMiddleware_1.requireAuth, userRoutes_1.default);
 app.use("/signup", addUser_1.default);
 app.use("/auth", authorizeUser_1.default);
 app.use("/products", authMiddleware_1.requireAuth, prductRoutes_1.default);

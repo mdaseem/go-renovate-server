@@ -38,10 +38,10 @@ app.use(
 
 // app.use(cors());
 app.use(express.json());
-app.use("/user", userRoutes);
+app.use("/user",requireAuth, userRoutes);
 app.use("/signup", addUser)
 app.use("/auth", authorize);
-app.use("/products",requireAuth, prductRoutes); 
+app.use("/products",requireAuth, prductRoutes);
 
 const server = http.createServer(app);
 
