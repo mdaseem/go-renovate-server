@@ -31,7 +31,7 @@ const port = process.env.SERVER_PORT || 3000;
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: [ "http://localhost:3000", "https://go-renovate.vercel.app"],
     credentials: true,
   })
 );
