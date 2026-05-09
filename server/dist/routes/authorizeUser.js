@@ -19,7 +19,7 @@ const router = express_1.default.Router();
 router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const data = req.body;
     const allUsers = yield userModels_1.Users.find({});
-    const userFound = allUsers === null || allUsers === void 0 ? void 0 : allUsers.find((item) => (item === null || item === void 0 ? void 0 : item.userEmail) === (data === null || data === void 0 ? void 0 : data.userEmail) &&
+    const userFound = allUsers === null || allUsers === void 0 ? void 0 : allUsers.find((item) => (item === null || item === void 0 ? void 0 : item.userEmail) === (data === null || data === void 0 ? void 0 : data.email) &&
         (item === null || item === void 0 ? void 0 : item.userPassword) === (data === null || data === void 0 ? void 0 : data.password));
     const validUserData = data.isGoogleLogin || userFound;
     if ((data === null || data === void 0 ? void 0 : data.password) && !userFound) {
@@ -31,7 +31,7 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             if (err)
                 console.log(err);
             else
-                return res.json({ token, status: true });
+                return res.json({ token, status: true, user: { name: userFound === null || userFound === void 0 ? void 0 : userFound.userName, email: data.userEmail, id: data.userId } });
         });
     }
     else {

@@ -10,5 +10,6 @@ const UserSchema = new Schema({
     userName: String,
     userEmail: String,
     userPassword: String,
+    userId: Number
 });
 exports.Users = mongoose_1.default.model("users", UserSchema);
