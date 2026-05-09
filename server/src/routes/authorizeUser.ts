@@ -8,7 +8,7 @@ router.post("/", async (req: Request, res: Response) => {
   const allUsers = await Users.find({});
   const userFound = allUsers?.find(
     (item) =>
-      item?.userEmail === data?.userEmail &&
+      item?.userEmail === data?.email &&
       item?.userPassword === data?.password
   );
   const validUserData = data.isGoogleLogin || userFound;
@@ -23,7 +23,7 @@ router.post("/", async (req: Request, res: Response) => {
       { expiresIn: "2 Days" },
       (err, token) => {
         if (err) console.log(err);
-        else return res.json({ token, status: true });
+        else return res.json({ token, status: true, user: { name: userFound?.userName, email: data.userEmail, id: data.userId } });
       }
     );
   } else {
