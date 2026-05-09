@@ -10,6 +10,12 @@ const UserSchema = new Schema({
     userName: String,
     userEmail: String,
     userPassword: String,
-    userId: Number
+    userId: Number,
+    connections: [
+        {
+            userId: Number,
+            status: String,
+        }
+    ]
 });
 exports.Users = mongoose_1.default.model("users", UserSchema);
