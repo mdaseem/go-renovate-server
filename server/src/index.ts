@@ -23,7 +23,7 @@ mongoose.connect("mongodb+srv://go-renovate-userDB:3AsOY7MQsPeCNaYV@cluster0.cjp
   .catch(err => console.error(" Connection error:", err));
 
 mongoose.connection.on("open", () => {
-  console.log(`Online Training DB connected !`);
+  console.log(`DB connected !`);
 });
 
 const app: Express = express();

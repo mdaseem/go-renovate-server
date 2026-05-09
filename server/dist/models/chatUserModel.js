@@ -6,9 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatUsers = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const Schema = mongoose_1.default.Schema;
-const UserSchema = new Schema({
+const ChatUserSchema = new Schema({
     Name: String,
     status: String,
     id: String,
 });
-exports.ChatUsers = mongoose_1.default.model("chatusers", UserSchema);
+exports.ChatUsers = mongoose_1.default.model("chatusers", ChatUserSchema);

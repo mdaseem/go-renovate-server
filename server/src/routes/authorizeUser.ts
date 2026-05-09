@@ -8,23 +8,32 @@ router.post("/", async (req: Request, res: Response) => {
   const allUsers = await Users.find({});
   const userFound = allUsers?.find(
     (item) =>
-      item?.userEmail === data?.email &&
-      item?.userPassword === data?.password
+      item?.userEmail === data?.email && item?.userPassword === data?.password,
   );
   const validUserData = data.isGoogleLogin || userFound;
   if (data?.password && !userFound) {
     return res.json({ message: "Invalid password", status: false });
   }
   if (validUserData) {
-    let payload = { name: data };
+    let payload = { name: userFound };
     jwt.sign(
       payload,
       "any_random_string_generated_once",
       { expiresIn: "2 Days" },
       (err, token) => {
         if (err) console.log(err);
-        else return res.json({ token, status: true, user: { name: userFound?.userName, email: data.userEmail, id: data.userId } });
-      }
+        else
+          return res.json({
+            token,
+            status: true,
+            user: {
+              name: userFound?.userName,
+              email: userFound?.userEmail,
+              id: userFound?.userId,
+              connections: userFound?.connections,
+            },
+          });
+      },
     );
   } else {
     res.json({ message: "Invalid user", status: false });

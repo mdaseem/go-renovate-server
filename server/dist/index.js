@@ -19,7 +19,7 @@ mongoose_1.default.connect("mongodb+srv://go-renovate-userDB:3AsOY7MQsPeCNaYV@cl
     .then(() => console.log(" Connected to MongoDB Atlas"))
     .catch(err => console.error(" Connection error:", err));
 mongoose_1.default.connection.on("open", () => {
-    console.log(`Online Training DB connected !`);
+    console.log(`DB connected !`);
 });
 const app = (0, express_1.default)();
 const port = process.env.SERVER_PORT || 3000;

@@ -19,19 +19,27 @@ const router = express_1.default.Router();
 router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const data = req.body;
     const allUsers = yield userModels_1.Users.find({});
-    const userFound = allUsers === null || allUsers === void 0 ? void 0 : allUsers.find((item) => (item === null || item === void 0 ? void 0 : item.userEmail) === (data === null || data === void 0 ? void 0 : data.email) &&
-        (item === null || item === void 0 ? void 0 : item.userPassword) === (data === null || data === void 0 ? void 0 : data.password));
+    const userFound = allUsers === null || allUsers === void 0 ? void 0 : allUsers.find((item) => (item === null || item === void 0 ? void 0 : item.userEmail) === (data === null || data === void 0 ? void 0 : data.email) && (item === null || item === void 0 ? void 0 : item.userPassword) === (data === null || data === void 0 ? void 0 : data.password));
     const validUserData = data.isGoogleLogin || userFound;
     if ((data === null || data === void 0 ? void 0 : data.password) && !userFound) {
         return res.json({ message: "Invalid password", status: false });
     }
     if (validUserData) {
-        let payload = { name: data };
+        let payload = { name: userFound };
         jsonwebtoken_1.default.sign(payload, "any_random_string_generated_once", { expiresIn: "2 Days" }, (err, token) => {
             if (err)
                 console.log(err);
             else
-                return res.json({ token, status: true, user: { name: userFound === null || userFound === void 0 ? void 0 : userFound.userName, email: data.userEmail, id: data.userId } });
+                return res.json({
+                    token,
+                    status: true,
+                    user: {
+                        name: userFound === null || userFound === void 0 ? void 0 : userFound.userName,
+                        email: userFound === null || userFound === void 0 ? void 0 : userFound.userEmail,
+                        id: userFound === null || userFound === void 0 ? void 0 : userFound.userId,
+                        connections: userFound === null || userFound === void 0 ? void 0 : userFound.connections,
+                    },
+                });
         });
     }
     else {
