@@ -11,6 +11,6 @@ const productSchema = new Schema({
     actualPrice: Number,
     discountPrice: Number,
     rating: Number,
-    imageUrl: String,
+    imageUrl: [String],
 });
 exports.Products = mongoose_1.default.model("productData", productSchema);
