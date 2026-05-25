@@ -36,7 +36,7 @@ mongoose_1.default.connection.on("open", () => {
 const app = (0, express_1.default)();
 const port = process.env.SERVER_PORT || 3000;
 app.use((0, cors_1.default)({
-    origin: ["http://localhost:3000", "https://go-renovate.vercel.app"],
+    origin: ["http://localhost:3000", "https://gorenovate.in"],
     credentials: true,
 }));
 // app.use(cors());
@@ -49,7 +49,7 @@ app.use("/rooms", roomRoutes_1.default);
 const server = http_1.default.createServer(app);
 const io = new socket_io_1.Server(server, {
     cors: {
-        origin: ["http://localhost:3000", "https://go-renovate.vercel.app"],
+        origin: ["http://localhost:3000", "https://gorenovate.in"],
         methods: ["GET", "POST"],
         credentials: true,
     },
