@@ -7,6 +7,7 @@ exports.Products = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const Schema = mongoose_1.default.Schema;
 const productSchema = new Schema({
+    _id: Number,
     description: String,
     actualPrice: Number,
     discountPrice: Number,

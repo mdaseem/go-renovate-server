@@ -1,0 +1,66 @@
+[
+  {
+    "_id": 1,
+    "description": "Buildcraft Renovations — Full Home Renovation Package",
+    "actualPrice": 250000,
+    "discountPrice": 219000,
+    "rating": 5,
+    "imageUrl": ["https://picsum.photos/seed/renovate-1/640/480"]
+  },
+  {
+    "_id": 2,
+    "description": "ModuKitchens Co. — Modular Kitchen Makeover",
+    "actualPrice": 185000,
+    "discountPrice": 159000,
+    "rating": 4,
+    "imageUrl": ["https://picsum.photos/seed/renovate-2/640/480"]
+  },
+  {
+    "_id": 3,
+    "description": "AquaFit Bath Studio — Complete Bathroom Renovation",
+    "actualPrice": 95000,
+    "discountPrice": 84500,
+    "rating": 5,
+    "imageUrl": ["https://picsum.photos/seed/renovate-3/640/480"]
+  },
+  {
+    "_id": 4,
+    "description": "BrightSpark Electricals — Full Home Rewiring & Smart Switches",
+    "actualPrice": 48000,
+    "discountPrice": 42000,
+    "rating": 4,
+    "imageUrl": ["https://picsum.photos/seed/renovate-4/640/480"]
+  },
+  {
+    "_id": 5,
+    "description": "ColorCraft Painters — Interior + Exterior Painting",
+    "actualPrice": 32000,
+    "discountPrice": 27500,
+    "rating": 5,
+    "imageUrl": ["https://picsum.photos/seed/renovate-5/640/480"]
+  },
+  {
+    "_id": 6,
+    "description": "FrameWorks Doors & Windows — UPVC Window & Door Fitting",
+    "actualPrice": 68000,
+    "discountPrice": 59900,
+    "rating": 4,
+    "imageUrl": ["https://picsum.photos/seed/renovate-6/640/480"]
+  },
+  {
+    "_id": 7,
+    "description": "StoneCraft Flooring — Marble & Vitrified Tile Installation",
+    "actualPrice": 145000,
+    "discountPrice": 128000,
+    "rating": 5,
+    "imageUrl": ["https://picsum.photos/seed/renovate-7/640/480"]
+  },
+  {
+    "_id": 8,
+    "description": "GreenNest Balcony & Terrace Studio — Outdoor Living Makeover",
+    "actualPrice": 76000,
+    "discountPrice": 65000,
+    "rating": 4,
+    "imageUrl": ["https://picsum.photos/seed/renovate-8/640/480"]
+  }
+]

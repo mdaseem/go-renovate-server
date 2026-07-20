@@ -5,6 +5,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import userRoutes from "./routes/userRoutes";
 import prductRoutes from "./routes/prductRoutes";
+import vendorDetailRoutes from "./routes/vendorDetailRoutes";
 import addUser from "./routes/addUser";
 import roomRoutes from "./routes/roomRoutes";
 import authorize from "./routes/authorizeUser";
@@ -50,6 +51,7 @@ app.use("/user", requireAuth, userRoutes);
 app.use("/signup", addUser);
 app.use("/auth", authorize);
 app.use("/products", requireAuth, prductRoutes);
+app.use("/vendors", requireAuth, vendorDetailRoutes);
 app.use("/rooms", roomRoutes);
 
 const server = http.createServer(app);
