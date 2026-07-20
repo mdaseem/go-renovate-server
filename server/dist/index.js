@@ -26,8 +26,9 @@ const authMiddleware_1 = require("./middleware/authMiddleware");
 const socket_io_1 = require("socket.io");
 const messageModel_1 = __importDefault(require("./models/messageModel"));
 dotenv_1.default.config();
+const { DB_USER, DB_PASS, DB_HOST, DB_NAME } = process.env;
 mongoose_1.default
-    .connect("mongodb+srv://go-renovate-userDB:3AsOY7MQsPeCNaYV@cluster0.cjpxkja.mongodb.net/test")
+    .connect(`mongodb+srv://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}`)
     .then(() => console.log(" Connected to MongoDB Atlas"))
     .catch((err) => console.error(" Connection error:", err));
 mongoose_1.default.connection.on("open", () => {

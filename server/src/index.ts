@@ -21,9 +21,10 @@ interface MessageData {
 }
 
 dotenv.config();
+const { DB_USER, DB_PASS, DB_HOST, DB_NAME } = process.env;
 mongoose
   .connect(
-    "mongodb+srv://go-renovate-userDB:3AsOY7MQsPeCNaYV@cluster0.cjpxkja.mongodb.net/test",
+    `mongodb+srv://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}`,
   )
   .then(() => console.log(" Connected to MongoDB Atlas"))
   .catch((err) => console.error(" Connection error:", err));
