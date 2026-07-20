@@ -19,6 +19,7 @@ const cors_1 = __importDefault(require("cors"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const prductRoutes_1 = __importDefault(require("./routes/prductRoutes"));
+const vendorDetailRoutes_1 = __importDefault(require("./routes/vendorDetailRoutes"));
 const addUser_1 = __importDefault(require("./routes/addUser"));
 const roomRoutes_1 = __importDefault(require("./routes/roomRoutes"));
 const authorizeUser_1 = __importDefault(require("./routes/authorizeUser"));
@@ -46,6 +47,7 @@ app.use("/user", authMiddleware_1.requireAuth, userRoutes_1.default);
 app.use("/signup", addUser_1.default);
 app.use("/auth", authorizeUser_1.default);
 app.use("/products", authMiddleware_1.requireAuth, prductRoutes_1.default);
+app.use("/vendors", authMiddleware_1.requireAuth, vendorDetailRoutes_1.default);
 app.use("/rooms", roomRoutes_1.default);
 const server = http_1.default.createServer(app);
 const io = new socket_io_1.Server(server, {

@@ -1,0 +1,568 @@
+[
+  {
+    "id": "1",
+    "name": "Buildcraft Renovations",
+    "tagline": "Crafting spaces that outlive trends.",
+    "rating": 4.7,
+    "reviewCount": 312,
+    "completedProjects": 480,
+    "yearsActive": 11,
+    "location": "Bengaluru, Karnataka",
+    "responseTime": "Responds within 2 hrs",
+    "verified": true,
+    "badges": ["Top Rated", "On-time Delivery", "Licensed & Insured"],
+    "categories": [
+      {
+        "id": "flooring",
+        "label": "Flooring",
+        "icon": "🪵",
+        "services": [
+          {
+            "id": "bc-fl-001",
+            "name": "Vitrified Tile Installation",
+            "description": "Premium vitrified tiles laid with precision using waterproof adhesive. Includes levelling, grouting, and edge finishing.",
+            "price": 85,
+            "unit": "sqft",
+            "materialTag": "tile",
+            "estimatedDays": 3,
+            "popular": true,
+            "includes": ["Surface prep", "Tile laying", "Grouting", "Edge beading"]
+          },
+          {
+            "id": "bc-fl-002",
+            "name": "Engineered Wood Flooring",
+            "description": "European-style engineered hardwood with click-lock installation. Suitable for living rooms and bedrooms.",
+            "price": 145,
+            "unit": "sqft",
+            "materialTag": "wood",
+            "estimatedDays": 2,
+            "includes": ["Moisture barrier", "Underlay", "Click-lock planks", "Skirting"]
+          }
+        ]
+      },
+      {
+        "id": "painting",
+        "label": "Painting",
+        "icon": "🎨",
+        "services": [
+          {
+            "id": "bc-pt-001",
+            "name": "Interior Wall Painting",
+            "description": "Premium emulsion paint, two coats over primer. Smooth finish with clean tape lines at transitions.",
+            "price": 18,
+            "unit": "sqft",
+            "materialTag": "paint",
+            "estimatedDays": 2,
+            "popular": true,
+            "includes": ["Wall prep", "Primer coat", "2 finish coats", "Furniture covering"]
+          },
+          {
+            "id": "bc-pt-002",
+            "name": "Texture / Stucco Finish",
+            "description": "Decorative textured walls using trowel-applied stucco or sand texture. Adds depth and character.",
+            "price": 35,
+            "unit": "sqft",
+            "materialTag": "paint",
+            "estimatedDays": 3,
+            "includes": ["Base coat", "Texture application", "Sealing", "Touch-up"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "name": "ModuKitchens Co.",
+    "tagline": "Kitchens built around how you cook.",
+    "rating": 4.8,
+    "reviewCount": 198,
+    "completedProjects": 260,
+    "yearsActive": 8,
+    "location": "Bengaluru, Karnataka",
+    "responseTime": "Responds within 1 hr",
+    "verified": true,
+    "badges": ["Kitchen Specialist", "Verified Pro"],
+    "categories": [
+      {
+        "id": "kitchen",
+        "label": "Kitchen",
+        "icon": "🍳",
+        "services": [
+          {
+            "id": "mk-kc-001",
+            "name": "Modular Kitchen (Per Linear Ft)",
+            "description": "Custom modular kitchen with marine-grade plywood carcass, soft-close hinges, and choice of finish.",
+            "price": 1800,
+            "unit": "running_ft",
+            "materialTag": "wood",
+            "estimatedDays": 10,
+            "popular": true,
+            "includes": ["Carcass", "Shutters", "Hardware", "Counter (basic)", "Installation"]
+          },
+          {
+            "id": "mk-kc-002",
+            "name": "Countertop Replacement",
+            "description": "Quartz or granite countertop cut to size with undermount sink cutout and polished edges.",
+            "price": 320,
+            "unit": "running_ft",
+            "materialTag": "stone",
+            "estimatedDays": 3,
+            "includes": ["Measurement", "Cut & polish", "Sink cutout", "Installation"]
+          }
+        ]
+      },
+      {
+        "id": "plumbing",
+        "label": "Plumbing",
+        "icon": "🚰",
+        "services": [
+          {
+            "id": "mk-pl-001",
+            "name": "Kitchen Sink & Tap Installation",
+            "description": "Stainless steel or granite sink installation with pull-down mixer tap and leak-tested fittings.",
+            "price": 3500,
+            "unit": "unit",
+            "materialTag": "plumbing",
+            "estimatedDays": 1,
+            "popular": true,
+            "includes": ["Sink unit", "Mixer tap", "Waste fittings", "Leak test"]
+          },
+          {
+            "id": "mk-pl-002",
+            "name": "RO Water Purifier Point Setup",
+            "description": "Dedicated plumbing and power point for under-sink RO purifier installation.",
+            "price": 2200,
+            "unit": "point",
+            "materialTag": "plumbing",
+            "estimatedDays": 1,
+            "includes": ["Inlet tapping", "Drain connection", "Power point", "Testing"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "name": "AquaFit Bath Studio",
+    "tagline": "Spa-inspired bathrooms, built to last.",
+    "rating": 4.9,
+    "reviewCount": 245,
+    "completedProjects": 310,
+    "yearsActive": 9,
+    "location": "Chennai, Tamil Nadu",
+    "responseTime": "Responds within 3 hrs",
+    "verified": true,
+    "badges": ["Top Rated", "Waterproofing Certified"],
+    "categories": [
+      {
+        "id": "bathroom",
+        "label": "Bathroom",
+        "icon": "🚿",
+        "services": [
+          {
+            "id": "ab-bt-001",
+            "name": "Full Bathroom Renovation",
+            "description": "End-to-end bathroom redo: tiling, plumbing fixtures, waterproofing, and fittings. Turnkey package.",
+            "price": 85000,
+            "unit": "room",
+            "materialTag": "tile",
+            "estimatedDays": 12,
+            "popular": true,
+            "includes": ["Waterproofing", "Tiling", "Plumbing", "Fixtures", "Accessories"]
+          },
+          {
+            "id": "ab-bt-002",
+            "name": "Waterproofing Membrane",
+            "description": "Multi-coat waterproofing system for wet areas — walls up to 2m and full floor coverage.",
+            "price": 65,
+            "unit": "sqft",
+            "materialTag": "concrete",
+            "estimatedDays": 3,
+            "includes": ["Surface prep", "3-coat membrane", "Flood test", "Certification"]
+          }
+        ]
+      },
+      {
+        "id": "glass-work",
+        "label": "Glass Work",
+        "icon": "🚪",
+        "services": [
+          {
+            "id": "ab-gl-001",
+            "name": "Shower Enclosure Installation",
+            "description": "Frameless or semi-frameless glass shower enclosure with chrome or matte black hardware.",
+            "price": 28000,
+            "unit": "unit",
+            "materialTag": "glass",
+            "estimatedDays": 2,
+            "popular": true,
+            "includes": ["Toughened glass panels", "Hardware", "Silicone sealing", "Installation"]
+          },
+          {
+            "id": "ab-gl-002",
+            "name": "Frameless Glass Partition",
+            "description": "10mm toughened glass partition for wet/dry zone separation with minimal metal framing.",
+            "price": 950,
+            "unit": "sqft",
+            "materialTag": "glass",
+            "estimatedDays": 2,
+            "includes": ["Toughened glass", "Patch fittings", "Sealing", "Installation"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "4",
+    "name": "BrightSpark Electricals",
+    "tagline": "Safe, smart electrical work — done right.",
+    "rating": 4.6,
+    "reviewCount": 167,
+    "completedProjects": 520,
+    "yearsActive": 14,
+    "location": "Hyderabad, Telangana",
+    "responseTime": "Responds within 1 hr",
+    "verified": true,
+    "badges": ["Licensed Electrician", "24/7 Emergency Service"],
+    "categories": [
+      {
+        "id": "electrical",
+        "label": "Electrical",
+        "icon": "⚡",
+        "services": [
+          {
+            "id": "bs-el-001",
+            "name": "Full Rewiring (Per Point)",
+            "description": "Safe concealed wiring using ISI-marked cables. Each point includes switch, socket, or fixture outlet.",
+            "price": 850,
+            "unit": "point",
+            "materialTag": "electrical",
+            "estimatedDays": 1,
+            "popular": true,
+            "includes": ["ISI cable", "Conduit", "Junction box", "Switch / socket", "Testing"]
+          },
+          {
+            "id": "bs-el-002",
+            "name": "MCB Distribution Board",
+            "description": "New MCB panel with ELCB and surge protection. Properly labelled circuits for safety.",
+            "price": 12000,
+            "unit": "unit",
+            "materialTag": "electrical",
+            "estimatedDays": 1,
+            "includes": ["MCB panel", "ELCB", "Surge protector", "Circuit labelling"]
+          }
+        ]
+      },
+      {
+        "id": "smart-home",
+        "label": "Smart Home",
+        "icon": "💡",
+        "services": [
+          {
+            "id": "bs-sh-001",
+            "name": "Smart Switch Upgrade",
+            "description": "Wi-Fi enabled smart switches with app control, schedules, and voice assistant compatibility.",
+            "price": 2200,
+            "unit": "point",
+            "materialTag": "electrical",
+            "estimatedDays": 1,
+            "popular": true,
+            "includes": ["Smart switch unit", "Neutral wire check", "App setup", "1-yr warranty"]
+          },
+          {
+            "id": "bs-sh-002",
+            "name": "Video Doorbell Installation",
+            "description": "Wired or battery smart video doorbell with app notifications and night vision.",
+            "price": 6500,
+            "unit": "unit",
+            "materialTag": "electrical",
+            "estimatedDays": 1,
+            "includes": ["Doorbell unit", "Wiring/mounting", "App pairing", "Testing"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "5",
+    "name": "ColorCraft Painters",
+    "tagline": "Colour stories that define your walls.",
+    "rating": 4.8,
+    "reviewCount": 203,
+    "completedProjects": 390,
+    "yearsActive": 7,
+    "location": "Pune, Maharashtra",
+    "responseTime": "Responds within 2 hrs",
+    "verified": true,
+    "badges": ["Eco-friendly Paints", "Top Rated"],
+    "categories": [
+      {
+        "id": "painting",
+        "label": "Painting",
+        "icon": "🎨",
+        "services": [
+          {
+            "id": "cc-pt-001",
+            "name": "Interior Wall Painting",
+            "description": "Premium low-VOC emulsion paint, two coats over primer, with clean tape lines at transitions.",
+            "price": 19,
+            "unit": "sqft",
+            "materialTag": "paint",
+            "estimatedDays": 2,
+            "popular": true,
+            "includes": ["Wall prep", "Primer coat", "2 finish coats", "Furniture covering"]
+          },
+          {
+            "id": "cc-pt-002",
+            "name": "Exterior Weatherproof Painting",
+            "description": "Elastomeric exterior paint rated for 10+ year durability. Protects against rain, UV, and cracking.",
+            "price": 28,
+            "unit": "sqft",
+            "materialTag": "paint",
+            "estimatedDays": 4,
+            "includes": ["Surface cleaning", "Crack filling", "Primer", "2 weatherproof coats"]
+          }
+        ]
+      },
+      {
+        "id": "wall-finishes",
+        "label": "Wall Finishes",
+        "icon": "🖌️",
+        "services": [
+          {
+            "id": "cc-wf-001",
+            "name": "Texture / Stucco Finish",
+            "description": "Decorative textured walls using trowel-applied stucco or sand texture. Adds depth and character.",
+            "price": 35,
+            "unit": "sqft",
+            "materialTag": "paint",
+            "estimatedDays": 3,
+            "includes": ["Base coat", "Texture application", "Sealing", "Touch-up"]
+          },
+          {
+            "id": "cc-wf-002",
+            "name": "Designer Wallpaper Installation",
+            "description": "Imported wallpaper installation with seamless pattern matching and bubble-free finish.",
+            "price": 55,
+            "unit": "sqft",
+            "materialTag": "fabric",
+            "estimatedDays": 2,
+            "includes": ["Wall priming", "Adhesive application", "Pattern matching", "Trimming"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6",
+    "name": "FrameWorks Doors & Windows",
+    "tagline": "Frames that seal in comfort, seal out noise.",
+    "rating": 4.5,
+    "reviewCount": 142,
+    "completedProjects": 275,
+    "yearsActive": 10,
+    "location": "Mumbai, Maharashtra",
+    "responseTime": "Responds within 4 hrs",
+    "verified": true,
+    "badges": ["Noise Reduction Certified", "Licensed & Insured"],
+    "categories": [
+      {
+        "id": "doors-windows",
+        "label": "Doors & Windows",
+        "icon": "🪟",
+        "services": [
+          {
+            "id": "fw-dw-001",
+            "name": "UPVC Window Installation",
+            "description": "Energy-efficient UPVC windows with double-glazing option. Noise reduction up to 35dB.",
+            "price": 650,
+            "unit": "sqft",
+            "materialTag": "glass",
+            "estimatedDays": 2,
+            "includes": ["Frame fabrication", "Glass panes", "Weather sealing", "Installation"]
+          },
+          {
+            "id": "fw-dw-002",
+            "name": "Solid Wood Door Fitting",
+            "description": "Teak or engineered wood doors with mortise lock, hinges, and frame. Custom sizing available.",
+            "price": 18000,
+            "unit": "unit",
+            "materialTag": "wood",
+            "estimatedDays": 2,
+            "popular": true,
+            "includes": ["Door slab", "Frame", "Hinges", "Mortise lock", "Finishing"]
+          }
+        ]
+      },
+      {
+        "id": "steel-work",
+        "label": "Steel Work",
+        "icon": "🔩",
+        "services": [
+          {
+            "id": "fw-st-001",
+            "name": "Steel Security Door",
+            "description": "Multi-point locking steel door with powder-coat finish. Rated for forced entry resistance.",
+            "price": 22000,
+            "unit": "unit",
+            "materialTag": "steel",
+            "estimatedDays": 1,
+            "popular": true,
+            "includes": ["Steel frame", "5-point lock", "Peephole", "Installation"]
+          },
+          {
+            "id": "fw-st-002",
+            "name": "Staircase Railing Installation",
+            "description": "Powder-coated MS or stainless-steel railing with baluster spacing to code.",
+            "price": 1450,
+            "unit": "running_ft",
+            "materialTag": "steel",
+            "estimatedDays": 3,
+            "includes": ["Fabrication", "Powder coating", "On-site welding", "Installation"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "7",
+    "name": "StoneCraft Flooring",
+    "tagline": "Stone and tile, laid to perfection.",
+    "rating": 4.9,
+    "reviewCount": 289,
+    "completedProjects": 410,
+    "yearsActive": 13,
+    "location": "Bengaluru, Karnataka",
+    "responseTime": "Responds within 2 hrs",
+    "verified": true,
+    "badges": ["Top Rated", "Precision Cutting"],
+    "categories": [
+      {
+        "id": "flooring",
+        "label": "Flooring",
+        "icon": "🪵",
+        "services": [
+          {
+            "id": "sc-fl-001",
+            "name": "Natural Marble Installation",
+            "description": "Imported marble slabs cut and laid with precision. Ideal for bathrooms, foyers, and feature walls.",
+            "price": 220,
+            "unit": "sqft",
+            "materialTag": "stone",
+            "estimatedDays": 4,
+            "popular": true,
+            "includes": ["Custom cuts", "Epoxy jointing", "Polishing", "Sealing"]
+          },
+          {
+            "id": "sc-fl-002",
+            "name": "Polished Concrete Flooring",
+            "description": "Industrial-finish concrete polished to a mirror sheen. Zero grout lines, seamless and durable.",
+            "price": 110,
+            "unit": "sqft",
+            "materialTag": "concrete",
+            "estimatedDays": 5,
+            "includes": ["Grinding", "Sealing", "Polishing (3 passes)", "Hardener coat"]
+          }
+        ]
+      },
+      {
+        "id": "tile-work",
+        "label": "Tile Work",
+        "icon": "🧱",
+        "services": [
+          {
+            "id": "sc-tl-001",
+            "name": "Kitchen Backsplash Tiling",
+            "description": "Subway, mosaic, or large-format tiles behind your hob and prep area. Waterproof and easy to clean.",
+            "price": 95,
+            "unit": "sqft",
+            "materialTag": "tile",
+            "estimatedDays": 2,
+            "popular": true,
+            "includes": ["Tile supply (basic)", "Waterproof adhesive", "Grouting", "Silicone edge"]
+          },
+          {
+            "id": "sc-tl-002",
+            "name": "Bathroom Wall Tiling",
+            "description": "Full-height wall tiling with waterproof grouting, suitable for wet areas.",
+            "price": 78,
+            "unit": "sqft",
+            "materialTag": "tile",
+            "estimatedDays": 3,
+            "includes": ["Surface prep", "Tile laying", "Waterproof grouting", "Edge finishing"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "8",
+    "name": "GreenNest Balcony & Terrace Studio",
+    "tagline": "Outdoor spaces reimagined.",
+    "rating": 4.6,
+    "reviewCount": 98,
+    "completedProjects": 150,
+    "yearsActive": 5,
+    "location": "Bengaluru, Karnataka",
+    "responseTime": "Responds within 3 hrs",
+    "verified": false,
+    "badges": ["Rising Star"],
+    "categories": [
+      {
+        "id": "outdoor",
+        "label": "Balcony & Terrace",
+        "icon": "🌿",
+        "services": [
+          {
+            "id": "gn-od-001",
+            "name": "Balcony Decking Installation",
+            "description": "Weather-resistant WPC decking with hidden clip fixing for balconies and terraces.",
+            "price": 260,
+            "unit": "sqft",
+            "materialTag": "wood",
+            "estimatedDays": 3,
+            "popular": true,
+            "includes": ["Sub-frame", "WPC decking boards", "Hidden clips", "Edge trims"]
+          },
+          {
+            "id": "gn-od-002",
+            "name": "Terrace Waterproofing & Tiling",
+            "description": "Slope correction, waterproofing membrane, and anti-skid tile finish for open terraces.",
+            "price": 130,
+            "unit": "sqft",
+            "materialTag": "concrete",
+            "estimatedDays": 5,
+            "includes": ["Slope correction", "Waterproof membrane", "Anti-skid tiling", "Flood test"]
+          }
+        ]
+      },
+      {
+        "id": "landscaping",
+        "label": "Landscaping",
+        "icon": "☀️",
+        "services": [
+          {
+            "id": "gn-ls-001",
+            "name": "Vertical Garden Setup",
+            "description": "Modular vertical garden panels with drip irrigation for balconies and feature walls.",
+            "price": 850,
+            "unit": "sqft",
+            "materialTag": "fabric",
+            "estimatedDays": 2,
+            "includes": ["Modular panels", "Plants (basic mix)", "Drip irrigation", "Installation"]
+          },
+          {
+            "id": "gn-ls-002",
+            "name": "Outdoor Lighting Installation",
+            "description": "Weatherproof LED point lighting for balconies, terraces, and outdoor seating areas.",
+            "price": 1800,
+            "unit": "point",
+            "materialTag": "electrical",
+            "estimatedDays": 1,
+            "includes": ["Weatherproof fixtures", "Wiring", "Switch point", "Testing"]
+          }
+        ]
+      }
+    ]
+  }
+]
