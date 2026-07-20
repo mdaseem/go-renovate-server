@@ -31,6 +31,7 @@ mongoose_1.default
     .connect(`mongodb+srv://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}`)
     .then(() => console.log(" Connected to MongoDB Atlas"))
     .catch((err) => console.error(" Connection error:", err));
+console.log('================My DB Connection string============', DB_USER, DB_PASS, DB_HOST, DB_NAME);
 mongoose_1.default.connection.on("open", () => {
     console.log(`DB connected !`);
 });
