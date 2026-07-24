@@ -23,6 +23,7 @@ const vendorDetailRoutes_1 = __importDefault(require("./routes/vendorDetailRoute
 const addUser_1 = __importDefault(require("./routes/addUser"));
 const roomRoutes_1 = __importDefault(require("./routes/roomRoutes"));
 const authorizeUser_1 = __importDefault(require("./routes/authorizeUser"));
+const aiChatRoutes_1 = __importDefault(require("./routes/aiChatRoutes"));
 const authMiddleware_1 = require("./middleware/authMiddleware");
 const socket_io_1 = require("socket.io");
 const messageModel_1 = __importDefault(require("./models/messageModel"));
@@ -47,8 +48,9 @@ app.use("/user", authMiddleware_1.requireAuth, userRoutes_1.default);
 app.use("/signup", addUser_1.default);
 app.use("/auth", authorizeUser_1.default);
 app.use("/products", authMiddleware_1.requireAuth, prductRoutes_1.default);
-app.use("/vendors", authMiddleware_1.requireAuth, vendorDetailRoutes_1.default);
+app.use("/vendors", vendorDetailRoutes_1.default);
 app.use("/rooms", roomRoutes_1.default);
+app.use("/ai", authMiddleware_1.requireAuth, aiChatRoutes_1.default);
 const server = http_1.default.createServer(app);
 const io = new socket_io_1.Server(server, {
     cors: {

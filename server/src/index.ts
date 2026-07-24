@@ -9,6 +9,7 @@ import vendorDetailRoutes from "./routes/vendorDetailRoutes";
 import addUser from "./routes/addUser";
 import roomRoutes from "./routes/roomRoutes";
 import authorize from "./routes/authorizeUser";
+import aiChatRoutes from "./routes/aiChatRoutes";
 import { requireAuth } from "./middleware/authMiddleware";
 import { Server } from "socket.io";
 import Message from "./models/messageModel";
@@ -24,13 +25,10 @@ interface MessageData {
 dotenv.config();
 const { DB_USER, DB_PASS, DB_HOST, DB_NAME } = process.env;
 mongoose
-  .connect(
-    `mongodb+srv://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}`,
-  )
+  .connect(`mongodb+srv://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}`)
   .then(() => console.log(" Connected to MongoDB Atlas"))
   .catch((err) => console.error(" Connection error:", err));
 
-  
 mongoose.connection.on("open", () => {
   console.log(`DB connected !`);
 });
@@ -51,8 +49,9 @@ app.use("/user", requireAuth, userRoutes);
 app.use("/signup", addUser);
 app.use("/auth", authorize);
 app.use("/products", requireAuth, prductRoutes);
-app.use("/vendors", requireAuth, vendorDetailRoutes);
+app.use("/vendors", vendorDetailRoutes);
 app.use("/rooms", roomRoutes);
+app.use("/ai", requireAuth, aiChatRoutes);
 
 const server = http.createServer(app);
 
