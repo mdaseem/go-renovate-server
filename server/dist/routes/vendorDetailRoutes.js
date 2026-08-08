@@ -15,9 +15,34 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
 const router = express_1.default.Router();
+function parseMultiValue(value) {
+    if (typeof value !== "string" || value.length === 0)
+        return undefined;
+    const values = value.split("|").filter(Boolean);
+    return values.length > 0 ? values : undefined;
+}
 router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const vendors = yield vendorDetailModel_1.VendorDetails.find({});
+        const { category, location, rating, verified } = req.query;
+        const filter = {};
+        const categoryIds = parseMultiValue(category);
+        if (categoryIds) {
+            filter["categories.id"] = { $in: categoryIds };
+        }
+        const locations = parseMultiValue(location);
+        if (locations) {
+            filter.location = { $in: locations };
+        }
+        if (typeof rating === "string" && rating.length > 0) {
+            const minRating = Number(rating);
+            if (!Number.isNaN(minRating)) {
+                filter.rating = { $gte: minRating };
+            }
+        }
+        if (verified === "1") {
+            filter.verified = true;
+        }
+        const vendors = yield vendorDetailModel_1.VendorDetails.find(filter);
         return res.json(vendors);
     }
     catch (error) {

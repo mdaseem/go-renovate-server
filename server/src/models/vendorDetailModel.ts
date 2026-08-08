@@ -42,6 +42,12 @@ const VendorDetailSchema = new Schema({
   categories: [ServiceCategorySchema],
 });
 
+// Supports GET /vendors query-param filtering (category, location, rating, verified)
+VendorDetailSchema.index({ "categories.id": 1 });
+VendorDetailSchema.index({ location: 1 });
+VendorDetailSchema.index({ rating: 1 });
+VendorDetailSchema.index({ verified: 1 });
+
 export const VendorDetails = mongoose.model(
   "vendorDetails",
   VendorDetailSchema,
