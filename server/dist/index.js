@@ -24,6 +24,8 @@ const addUser_1 = __importDefault(require("./routes/addUser"));
 const roomRoutes_1 = __importDefault(require("./routes/roomRoutes"));
 const authorizeUser_1 = __importDefault(require("./routes/authorizeUser"));
 const aiChatRoutes_1 = __importDefault(require("./routes/aiChatRoutes"));
+const orderRoutes_1 = __importDefault(require("./routes/orderRoutes"));
+const shiprocketWebhookRoutes_1 = __importDefault(require("./routes/shiprocketWebhookRoutes"));
 const authMiddleware_1 = require("./middleware/authMiddleware");
 const socket_io_1 = require("socket.io");
 const messageModel_1 = __importDefault(require("./models/messageModel"));
@@ -51,6 +53,18 @@ app.use("/products", authMiddleware_1.requireAuth, prductRoutes_1.default);
 app.use("/vendors", vendorDetailRoutes_1.default);
 app.use("/rooms", roomRoutes_1.default);
 app.use("/ai", authMiddleware_1.requireAuth, aiChatRoutes_1.default);
+app.use("/orders", authMiddleware_1.requireAuth, orderRoutes_1.default);
+app.use("/webhooks/shiprocket", shiprocketWebhookRoutes_1.default);
+app.use((req, res) => {
+    res.status(404).json({ message: "Not found" });
+});
+app.use((err, req, res, next) => {
+    if ((err === null || err === void 0 ? void 0 : err.type) === "entity.parse.failed") {
+        return res.status(400).json({ message: "Malformed JSON body" });
+    }
+    console.error("Unhandled request error:", err);
+    res.status(500).json({ message: "Internal server error" });
+});
 const server = http_1.default.createServer(app);
 const io = new socket_io_1.Server(server, {
     cors: {

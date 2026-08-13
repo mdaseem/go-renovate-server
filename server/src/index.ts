@@ -1,4 +1,4 @@
-import express, { Express } from "express";
+import express, { Express, NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 import http from "http";
 import cors from "cors";
@@ -10,6 +10,8 @@ import addUser from "./routes/addUser";
 import roomRoutes from "./routes/roomRoutes";
 import authorize from "./routes/authorizeUser";
 import aiChatRoutes from "./routes/aiChatRoutes";
+import orderRoutes from "./routes/orderRoutes";
+import shiprocketWebhookRoutes from "./routes/shiprocketWebhookRoutes";
 import { requireAuth } from "./middleware/authMiddleware";
 import { Server } from "socket.io";
 import Message from "./models/messageModel";
@@ -52,6 +54,21 @@ app.use("/products", requireAuth, prductRoutes);
 app.use("/vendors", vendorDetailRoutes);
 app.use("/rooms", roomRoutes);
 app.use("/ai", requireAuth, aiChatRoutes);
+app.use("/orders", requireAuth, orderRoutes);
+app.use("/webhooks/shiprocket", shiprocketWebhookRoutes);
+
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ message: "Not found" });
+});
+
+
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err?.type === "entity.parse.failed") {
+    return res.status(400).json({ message: "Malformed JSON body" });
+  }
+  console.error("Unhandled request error:", err);
+  res.status(500).json({ message: "Internal server error" });
+});
 
 const server = http.createServer(app);
 
