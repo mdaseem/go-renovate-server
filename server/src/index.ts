@@ -11,6 +11,7 @@ import roomRoutes from "./routes/roomRoutes";
 import authorize from "./routes/authorizeUser";
 import aiChatRoutes from "./routes/aiChatRoutes";
 import orderRoutes from "./routes/orderRoutes";
+import wishlistRoutes from "./routes/wishlistRoutes";
 import shiprocketWebhookRoutes from "./routes/shiprocketWebhookRoutes";
 import { requireAuth } from "./middleware/authMiddleware";
 import { Server } from "socket.io";
@@ -55,6 +56,7 @@ app.use("/vendors", vendorDetailRoutes);
 app.use("/rooms", roomRoutes);
 app.use("/ai", requireAuth, aiChatRoutes);
 app.use("/orders", requireAuth, orderRoutes);
+app.use("/wishlist", requireAuth, wishlistRoutes);
 app.use("/webhooks/shiprocket", shiprocketWebhookRoutes);
 
 app.use((req: Request, res: Response) => {
