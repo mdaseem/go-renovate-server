@@ -26,6 +26,7 @@
             "materialTag": "tile",
             "estimatedDays": 3,
             "popular": true,
+            "images": ["/house.jpg"],
             "includes": ["Surface prep", "Tile laying", "Grouting", "Edge beading"]
           },
           {

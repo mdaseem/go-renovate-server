@@ -16,6 +16,7 @@ const ServiceOptionSchema = new Schema({
     estimatedDays: Number,
     popular: Boolean,
     imageUrl: String,
+    images: [String],
     includes: [String],
 }, { _id: false });
 const ServiceCategorySchema = new Schema({

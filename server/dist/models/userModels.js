@@ -15,6 +15,10 @@ const AddressSchema = new Schema({
     state: String,
     pincode: String,
 }, { _id: false });
+const RecentSearchSchema = new Schema({
+    term: String,
+    searchedAt: Date,
+}, { _id: false });
 const UserSchema = new Schema({
     userName: String,
     userEmail: String,
@@ -27,5 +31,6 @@ const UserSchema = new Schema({
         }
     ],
     address: AddressSchema,
+    recentSearches: [RecentSearchSchema],
 });
 exports.Users = mongoose_1.default.model("users", UserSchema);
