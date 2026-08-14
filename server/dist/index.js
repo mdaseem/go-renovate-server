@@ -25,6 +25,7 @@ const roomRoutes_1 = __importDefault(require("./routes/roomRoutes"));
 const authorizeUser_1 = __importDefault(require("./routes/authorizeUser"));
 const aiChatRoutes_1 = __importDefault(require("./routes/aiChatRoutes"));
 const orderRoutes_1 = __importDefault(require("./routes/orderRoutes"));
+const wishlistRoutes_1 = __importDefault(require("./routes/wishlistRoutes"));
 const shiprocketWebhookRoutes_1 = __importDefault(require("./routes/shiprocketWebhookRoutes"));
 const authMiddleware_1 = require("./middleware/authMiddleware");
 const socket_io_1 = require("socket.io");
@@ -54,6 +55,7 @@ app.use("/vendors", vendorDetailRoutes_1.default);
 app.use("/rooms", roomRoutes_1.default);
 app.use("/ai", authMiddleware_1.requireAuth, aiChatRoutes_1.default);
 app.use("/orders", authMiddleware_1.requireAuth, orderRoutes_1.default);
+app.use("/wishlist", authMiddleware_1.requireAuth, wishlistRoutes_1.default);
 app.use("/webhooks/shiprocket", shiprocketWebhookRoutes_1.default);
 app.use((req, res) => {
     res.status(404).json({ message: "Not found" });

@@ -35,6 +35,7 @@ const UserSchema = new Schema({
   ],
   address: AddressSchema,
   recentSearches: [RecentSearchSchema],
+  wishlist: [String],
 });
 
 export const Users = mongoose.model("users", UserSchema);

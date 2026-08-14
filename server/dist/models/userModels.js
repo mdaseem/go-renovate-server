@@ -32,5 +32,6 @@ const UserSchema = new Schema({
     ],
     address: AddressSchema,
     recentSearches: [RecentSearchSchema],
+    wishlist: [String],
 });
 exports.Users = mongoose_1.default.model("users", UserSchema);
