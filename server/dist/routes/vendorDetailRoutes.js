@@ -15,15 +15,32 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
 const router = express_1.default.Router();
+const MAX_SEARCH_LENGTH = 100;
 function parseMultiValue(value) {
     if (typeof value !== "string" || value.length === 0)
         return undefined;
     const values = value.split("|").filter(Boolean);
     return values.length > 0 ? values : undefined;
 }
+// Escapes regex metacharacters in free-text search input before it's used
+// to build a RegExp, so a query like "A/C (window)" can't throw or be
+// (ab)used to build an unintended pattern.
+function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function relevanceScore(vendor, term) {
+    const name = (vendor.name || "").toLowerCase();
+    if (name === term)
+        return 3;
+    if (name.startsWith(term))
+        return 2;
+    if (name.includes(term))
+        return 1;
+    return 0;
+}
 router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { category, location, rating, verified } = req.query;
+        const { category, location, rating, verified, search, limit } = req.query;
         const filter = {};
         const categoryIds = parseMultiValue(category);
         if (categoryIds) {
@@ -42,7 +59,29 @@ router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (verified === "1") {
             filter.verified = true;
         }
-        const vendors = yield vendorDetailModel_1.VendorDetails.find(filter);
+        const searchTerm = typeof search === "string" ? search.trim().slice(0, MAX_SEARCH_LENGTH) : "";
+        if (searchTerm) {
+            const pattern = new RegExp(escapeRegExp(searchTerm), "i");
+            filter.$or = [
+                { name: pattern },
+                { tagline: pattern },
+                { location: pattern },
+                { "categories.label": pattern },
+                { "categories.services.name": pattern },
+            ];
+        }
+        let vendors = yield vendorDetailModel_1.VendorDetails.find(filter);
+        if (searchTerm) {
+            const lowerTerm = searchTerm.toLowerCase();
+            vendors = vendors
+                .slice()
+                .sort((a, b) => relevanceScore(b, lowerTerm) - relevanceScore(a, lowerTerm) ||
+                (b.rating || 0) - (a.rating || 0));
+        }
+        const limitNum = typeof limit === "string" ? Number(limit) : NaN;
+        if (!Number.isNaN(limitNum) && limitNum > 0) {
+            vendors = vendors.slice(0, limitNum);
+        }
         return res.json(vendors);
     }
     catch (error) {

@@ -26,6 +26,7 @@ const ServiceOptionSchema = new mongoose.Schema(
     estimatedDays: Number,
     popular: Boolean,
     imageUrl: String,
+    images: [String],
     includes: [String],
   },
   { _id: false },
