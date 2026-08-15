@@ -2,19 +2,35 @@ import express, { Request, Response, Router } from "express";
 import Message from "../models/messageModel";
 
 const router: Router = express.Router();
-// GET all messages of a room
+// GET messages of a room, newest page first (paginated via ?limit=&before=)
 
 router.get("/:roomId", async (req: Request, res: Response) => {
   try {
     const { roomId } = req.params;
 
-    const messages = await Message.find({
-      roomId,
-    }).sort({ createdAt: 1 });
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit as string, 10) || 30, 1),
+      100,
+    );
+
+    const query: Record<string, unknown> = { roomId };
+    if (req.query.before) {
+      const before = new Date(req.query.before as string);
+      if (!isNaN(before.getTime())) {
+        query.createdAt = { $lt: before };
+      }
+    }
+
+    const page = await Message.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit);
+
+    const messages = page.reverse();
 
     return res.status(200).json({
       success: true,
       messages,
+      hasMore: page.length === limit,
     });
   } catch (error) {
     console.log(error);

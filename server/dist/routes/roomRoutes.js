@@ -15,16 +15,26 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const messageModel_1 = __importDefault(require("../models/messageModel"));
 const router = express_1.default.Router();
-// GET all messages of a room
+// GET messages of a room, newest page first (paginated via ?limit=&before=)
 router.get("/:roomId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { roomId } = req.params;
-        const messages = yield messageModel_1.default.find({
-            roomId,
-        }).sort({ createdAt: 1 });
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 30, 1), 100);
+        const query = { roomId };
+        if (req.query.before) {
+            const before = new Date(req.query.before);
+            if (!isNaN(before.getTime())) {
+                query.createdAt = { $lt: before };
+            }
+        }
+        const page = yield messageModel_1.default.find(query)
+            .sort({ createdAt: -1 })
+            .limit(limit);
+        const messages = page.reverse();
         return res.status(200).json({
             success: true,
             messages,
+            hasMore: page.length === limit,
         });
     }
     catch (error) {
