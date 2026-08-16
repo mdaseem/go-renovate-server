@@ -18,6 +18,7 @@ const ServiceOptionSchema = new Schema({
     imageUrl: String,
     images: [String],
     includes: [String],
+    isAvailable: { type: Boolean, default: true },
 }, { _id: false });
 const ServiceCategorySchema = new Schema({
     id: String,

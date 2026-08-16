@@ -16,6 +16,7 @@ const express_1 = __importDefault(require("express"));
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
 const router = express_1.default.Router();
 const MAX_SEARCH_LENGTH = 100;
+const MAX_AVAILABILITY_IDS = 50;
 function parseMultiValue(value) {
     if (typeof value !== "string" || value.length === 0)
         return undefined;
@@ -87,6 +88,50 @@ router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     catch (error) {
         console.error("Failed to fetch vendors:", error);
         return res.status(500).json({ message: "Failed to fetch vendors" });
+    }
+}));
+router.get("/:id/services/availability", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        const idsParam = req.query.ids;
+        const requestedIds = typeof idsParam === "string"
+            ? idsParam.split(",").map((value) => value.trim()).filter(Boolean)
+            : [];
+        if (requestedIds.length === 0) {
+            return res.status(400).json({ message: "ids query parameter is required" });
+        }
+        if (requestedIds.length > MAX_AVAILABILITY_IDS) {
+            return res.status(400).json({
+                message: `At most ${MAX_AVAILABILITY_IDS} ids can be checked at once`,
+            });
+        }
+        const vendor = yield vendorDetailModel_1.VendorDetails.findOne({ id }, { categories: 1 });
+        if (!vendor) {
+            return res.status(404).json({ message: "Vendor not found" });
+        }
+        const catalog = new Map();
+        const categories = vendor.get("categories") || [];
+        for (const category of categories) {
+            for (const service of category.services || []) {
+                catalog.set(service.id, {
+                    price: typeof service.price === "number" ? service.price : null,
+                    isAvailable: service.isAvailable !== false,
+                });
+            }
+        }
+        const services = requestedIds.map((serviceId) => {
+            const entry = catalog.get(serviceId);
+            return {
+                id: serviceId,
+                isAvailable: entry ? entry.isAvailable : false,
+                price: entry ? entry.price : null,
+            };
+        });
+        return res.json({ services });
+    }
+    catch (error) {
+        console.error("Failed to check service availability:", error);
+        return res.status(500).json({ message: "Failed to check service availability" });
     }
 }));
 router.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {

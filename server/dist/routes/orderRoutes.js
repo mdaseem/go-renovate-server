@@ -130,6 +130,11 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                     message: `Service ${item.serviceId} is not offered by this vendor`,
                 });
             }
+            if (catalogEntry.service.isAvailable === false) {
+                return res.status(400).json({
+                    message: `${catalogEntry.service.name} is currently unavailable. Please remove it from your cart and try again.`,
+                });
+            }
             resolvedItems.push({
                 serviceId: catalogEntry.service.id,
                 name: catalogEntry.service.name,
