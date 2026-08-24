@@ -23,6 +23,19 @@ export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   CANCELLED: [],
 };
 
+// Mirrors the frontend's own ORDER_STATUS_STEPS (types/order.ts) — the
+// non-terminal progression, ordered least- to most-advanced. Used to rank
+// statuses (e.g. essentialOrderRoutes.ts's aggregate-status computation for
+// a multi-vendor order), not just to render a timeline.
+export const ORDER_STATUS_STEPS: OrderStatus[] = [
+  "PLACED",
+  "APPROVED",
+  "SHIPMENT_CREATED",
+  "PICKUP_SCHEDULED",
+  "IN_TRANSIT",
+  "DELIVERED",
+];
+
 const OrderItemSchema = new Schema(
   {
     serviceId: String,

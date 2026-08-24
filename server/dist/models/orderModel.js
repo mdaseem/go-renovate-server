@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Orders = exports.ORDER_STATUS_TRANSITIONS = void 0;
+exports.Orders = exports.ORDER_STATUS_STEPS = exports.ORDER_STATUS_TRANSITIONS = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const Schema = mongoose_1.default.Schema;
 exports.ORDER_STATUS_TRANSITIONS = {
@@ -16,6 +16,18 @@ exports.ORDER_STATUS_TRANSITIONS = {
     REJECTED: [],
     CANCELLED: [],
 };
+// Mirrors the frontend's own ORDER_STATUS_STEPS (types/order.ts) — the
+// non-terminal progression, ordered least- to most-advanced. Used to rank
+// statuses (e.g. essentialOrderRoutes.ts's aggregate-status computation for
+// a multi-vendor order), not just to render a timeline.
+exports.ORDER_STATUS_STEPS = [
+    "PLACED",
+    "APPROVED",
+    "SHIPMENT_CREATED",
+    "PICKUP_SCHEDULED",
+    "IN_TRANSIT",
+    "DELIVERED",
+];
 const OrderItemSchema = new Schema({
     serviceId: String,
     name: String,

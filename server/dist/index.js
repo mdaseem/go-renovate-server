@@ -27,6 +27,9 @@ const aiChatRoutes_1 = __importDefault(require("./routes/aiChatRoutes"));
 const orderRoutes_1 = __importDefault(require("./routes/orderRoutes"));
 const wishlistRoutes_1 = __importDefault(require("./routes/wishlistRoutes"));
 const shiprocketWebhookRoutes_1 = __importDefault(require("./routes/shiprocketWebhookRoutes"));
+const essentialCategoryRoutes_1 = __importDefault(require("./routes/essentialCategoryRoutes"));
+const essentialOrderRoutes_1 = __importDefault(require("./routes/essentialOrderRoutes"));
+const essentialRoutes_1 = __importDefault(require("./routes/essentialRoutes"));
 const authMiddleware_1 = require("./middleware/authMiddleware");
 const socket_io_1 = require("socket.io");
 const messageModel_1 = __importDefault(require("./models/messageModel"));
@@ -47,6 +50,18 @@ app.use((0, cors_1.default)({
 }));
 // app.use(cors());
 app.use(express_1.default.json());
+// Public, unauthenticated — pinged by .github/workflows/keep-alive.yml on a
+// schedule to stop Render's free tier from spinning the service down after
+// ~15 minutes idle. Deliberately lightweight (no DB round trip required to
+// answer) so the ping itself never becomes the slow part.
+app.get("/health", (req, res) => {
+    res.status(200).json({
+        status: "ok",
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        dbConnected: mongoose_1.default.connection.readyState === 1,
+    });
+});
 app.use("/user", authMiddleware_1.requireAuth, userRoutes_1.default);
 app.use("/signup", addUser_1.default);
 app.use("/auth", authorizeUser_1.default);
@@ -57,6 +72,14 @@ app.use("/ai", authMiddleware_1.requireAuth, aiChatRoutes_1.default);
 app.use("/orders", authMiddleware_1.requireAuth, orderRoutes_1.default);
 app.use("/wishlist", authMiddleware_1.requireAuth, wishlistRoutes_1.default);
 app.use("/webhooks/shiprocket", shiprocketWebhookRoutes_1.default);
+// /essentials/categories and /essentials/orders MUST both be mounted
+// before /essentials — otherwise those requests would be swallowed by
+// essentialRoutes' GET /:id (treating "categories"/"orders" as an
+// essential id) before ever reaching these routers, since Express tries
+// mounts in registration order.
+app.use("/essentials/categories", essentialCategoryRoutes_1.default);
+app.use("/essentials/orders", authMiddleware_1.requireAuth, essentialOrderRoutes_1.default);
+app.use("/essentials", essentialRoutes_1.default);
 app.use((req, res) => {
     res.status(404).json({ message: "Not found" });
 });

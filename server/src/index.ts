@@ -13,6 +13,9 @@ import aiChatRoutes from "./routes/aiChatRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import wishlistRoutes from "./routes/wishlistRoutes";
 import shiprocketWebhookRoutes from "./routes/shiprocketWebhookRoutes";
+import essentialCategoryRoutes from "./routes/essentialCategoryRoutes";
+import essentialOrderRoutes from "./routes/essentialOrderRoutes";
+import essentialRoutes from "./routes/essentialRoutes";
 import { requireAuth } from "./middleware/authMiddleware";
 import { Server } from "socket.io";
 import Message from "./models/messageModel";
@@ -48,6 +51,20 @@ app.use(
 
 // app.use(cors());
 app.use(express.json());
+
+// Public, unauthenticated — pinged by .github/workflows/keep-alive.yml on a
+// schedule to stop Render's free tier from spinning the service down after
+// ~15 minutes idle. Deliberately lightweight (no DB round trip required to
+// answer) so the ping itself never becomes the slow part.
+app.get("/health", (req: Request, res: Response) => {
+  res.status(200).json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    dbConnected: mongoose.connection.readyState === 1,
+  });
+});
+
 app.use("/user", requireAuth, userRoutes);
 app.use("/signup", addUser);
 app.use("/auth", authorize);
@@ -58,6 +75,14 @@ app.use("/ai", requireAuth, aiChatRoutes);
 app.use("/orders", requireAuth, orderRoutes);
 app.use("/wishlist", requireAuth, wishlistRoutes);
 app.use("/webhooks/shiprocket", shiprocketWebhookRoutes);
+// /essentials/categories and /essentials/orders MUST both be mounted
+// before /essentials — otherwise those requests would be swallowed by
+// essentialRoutes' GET /:id (treating "categories"/"orders" as an
+// essential id) before ever reaching these routers, since Express tries
+// mounts in registration order.
+app.use("/essentials/categories", essentialCategoryRoutes);
+app.use("/essentials/orders", requireAuth, essentialOrderRoutes);
+app.use("/essentials", essentialRoutes);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ message: "Not found" });
