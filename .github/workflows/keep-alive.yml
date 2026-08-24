@@ -1,0 +1,24 @@
+name: Keep Backend Awake
+
+#
+# Note: GitHub's scheduled-workflow cron is best-effort, not exact — runs
+# can be delayed by several minutes, especially on the free tier under
+# load. A 10-minute interval leaves margin under Render's ~15-minute idle
+# window even with typical scheduling jitter; tighten to */5 (still free on
+# this public repo) if pauses are still slipping through.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          curl --fail --silent --show-error \
+            --max-time 40 \
+            --retry 2 --retry-delay 5 --retry-connrefused \
+            https://go-renovate-server.onrender.com/health
