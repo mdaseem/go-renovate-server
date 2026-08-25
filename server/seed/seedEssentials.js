@@ -111,6 +111,14 @@ const essentials = [
   { _id: eid(1006), name: "Persian-Style Area Rug", price: 7499, vendorId: "2", categorySlugs: ["living-room"], slot: "rug", purchaseMode: "on-platform", images: [] },
   { _id: eid(1007), name: "Arc Floor Lamp", price: 4499, vendorId: "4", categorySlugs: ["living-room"], slot: "lighting", purchaseMode: "on-platform", images: [] },
   { _id: eid(1008), name: "Pendant Cluster Light", price: 5999, vendorId: "4", categorySlugs: ["living-room"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1009), name: "L-Shaped Sectional Sofa", price: 38999, vendorId: "2", categorySlugs: ["living-room"], slot: "sofa", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1010), name: "Compact 2-Seater Sofa", price: 14999, vendorId: "5", categorySlugs: ["living-room"], slot: "sofa", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1011), name: "Glass-Top Coffee Table", price: 8999, vendorId: "5", categorySlugs: ["living-room"], slot: "coffee-table", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1012), name: "Industrial Metal Coffee Table", price: 7999, vendorId: "2", categorySlugs: ["living-room"], slot: "coffee-table", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1013), name: "Geometric Wool Rug", price: 5999, vendorId: "2", categorySlugs: ["living-room"], slot: "rug", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1014), name: "Shag Rug", price: 4499, vendorId: "5", categorySlugs: ["living-room"], slot: "rug", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1015), name: "Tripod Floor Lamp", price: 3799, vendorId: "4", categorySlugs: ["living-room"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1016), name: "Smart LED Ceiling Panel", price: 6999, vendorId: "4", categorySlugs: ["living-room"], slot: "lighting", purchaseMode: "on-platform", images: [] },
 
   // Bedroom (2xxx)
   { _id: eid(2001), name: "Queen Platform Bed", price: 32999, vendorId: "2", categorySlugs: ["bedroom"], slot: "bed", purchaseMode: "on-platform", images: [] },
@@ -121,6 +129,14 @@ const essentials = [
   { _id: eid(2006), name: "Round Marble Nightstand", price: 4799, vendorId: "5", categorySlugs: ["bedroom"], slot: "bedside-table", purchaseMode: "on-platform", images: [] },
   { _id: eid(2007), name: "Warm Bedside Lamp", price: 1899, vendorId: "4", categorySlugs: ["bedroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
   { _id: eid(2008), name: "Dimmable Reading Light", price: 2499, vendorId: "4", categorySlugs: ["bedroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2009), name: "Storage Bed with Drawers", price: 36999, vendorId: "2", categorySlugs: ["bedroom"], slot: "bed", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2010), name: "Minimalist Bed Frame", price: 21999, vendorId: "5", categorySlugs: ["bedroom"], slot: "bed", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2011), name: "4-Door Mirrored Wardrobe", price: 34999, vendorId: "2", categorySlugs: ["bedroom"], slot: "wardrobe", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2012), name: "Open Shelf Wardrobe", price: 19999, vendorId: "5", categorySlugs: ["bedroom"], slot: "wardrobe", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2013), name: "Floating Bedside Shelf", price: 2199, vendorId: "2", categorySlugs: ["bedroom"], slot: "bedside-table", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2014), name: "Rattan Bedside Table", price: 3799, vendorId: "5", categorySlugs: ["bedroom"], slot: "bedside-table", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2015), name: "Pendant Bedside Light", price: 2799, vendorId: "4", categorySlugs: ["bedroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2016), name: "Smart Bedside Lamp", price: 3299, vendorId: "4", categorySlugs: ["bedroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
 
   // Bathroom (3xxx)
   { _id: eid(3001), name: "Single Sink Vanity Unit", price: 19999, vendorId: "3", categorySlugs: ["bathroom"], slot: "vanity", purchaseMode: "on-platform", images: [] },
@@ -131,6 +147,14 @@ const essentials = [
   { _id: eid(3006), name: "Corner Shelf Unit", price: 2199, vendorId: "3", categorySlugs: ["bathroom"], slot: "storage", purchaseMode: "on-platform", images: [] },
   { _id: eid(3007), name: "Waterproof Wall Sconce", price: 1799, vendorId: "4", categorySlugs: ["bathroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
   { _id: eid(3008), name: "IP44 Vanity Light Bar", price: 2399, vendorId: "4", categorySlugs: ["bathroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3009), name: "Double Sink Vanity Unit", price: 27999, vendorId: "3", categorySlugs: ["bathroom"], slot: "vanity", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3010), name: "Floating Vanity Unit", price: 16999, vendorId: "3", categorySlugs: ["bathroom"], slot: "vanity", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3011), name: "Rectangular Framed Mirror", price: 3599, vendorId: "3", categorySlugs: ["bathroom"], slot: "mirror", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3012), name: "Anti-Fog Smart Mirror", price: 8999, vendorId: "3", categorySlugs: ["bathroom"], slot: "mirror", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3013), name: "Wall-Mounted Cabinet", price: 4299, vendorId: "3", categorySlugs: ["bathroom"], slot: "storage", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3014), name: "Tall Linen Tower", price: 6499, vendorId: "3", categorySlugs: ["bathroom"], slot: "storage", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3015), name: "LED Strip Mirror Light", price: 2699, vendorId: "4", categorySlugs: ["bathroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3016), name: "Ceiling Exhaust Light Combo", price: 3299, vendorId: "4", categorySlugs: ["bathroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
 
   // Kitchen (4xxx)
   { _id: eid(4001), name: "4-Seater Dining Table", price: 21999, vendorId: "2", categorySlugs: ["kitchen"], slot: "dining-table", purchaseMode: "on-platform", images: [] },
@@ -141,18 +165,71 @@ const essentials = [
   { _id: eid(4006), name: "Pantry Storage Unit", price: 10499, vendorId: "2", categorySlugs: ["kitchen"], slot: "storage", purchaseMode: "on-platform", images: [] },
   { _id: eid(4007), name: "Pendant Kitchen Light Set", price: 4299, vendorId: "4", categorySlugs: ["kitchen"], slot: "lighting", purchaseMode: "on-platform", images: [] },
   { _id: eid(4008), name: "Under-Cabinet LED Strip", price: 1999, vendorId: "4", categorySlugs: ["kitchen"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4009), name: "6-Seater Dining Table", price: 34999, vendorId: "5", categorySlugs: ["kitchen"], slot: "dining-table", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4010), name: "Round Dining Table", price: 18999, vendorId: "2", categorySlugs: ["kitchen"], slot: "dining-table", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4011), name: "Set of 6 Dining Chairs", price: 17999, vendorId: "2", categorySlugs: ["kitchen"], slot: "chairs", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4012), name: "Wicker Dining Chairs (Set of 4)", price: 9999, vendorId: "5", categorySlugs: ["kitchen"], slot: "chairs", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4013), name: "Kitchen Island Cart", price: 13999, vendorId: "5", categorySlugs: ["kitchen"], slot: "storage", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4014), name: "Wall-Mounted Spice Rack", price: 2999, vendorId: "2", categorySlugs: ["kitchen"], slot: "storage", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4015), name: "Track Lighting Kit", price: 5499, vendorId: "4", categorySlugs: ["kitchen"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4016), name: "Smart Kitchen Ceiling Light", price: 4799, vendorId: "4", categorySlugs: ["kitchen"], slot: "lighting", purchaseMode: "on-platform", images: [] },
 ];
 
-// One default Room (bundle) per Category — the first (cheaper) option in
-// each slot. totalPrice is computed below from the actual essential prices
-// so it can't drift out of sync with the picks. No admin curation screen
-// exists yet, so this is still exactly one Room per Category — styleTags
-// are illustrative, not derived from anything.
+// Ten curated Rooms (bundles) per Category, each a different combination of
+// the slot options above. The original one-per-category defaults (first
+// entry in each group below) are untouched; the rest are additive — same
+// admin-entered-curation situation as before, just more of it, since there's
+// still no admin curation screen to generate these dynamically. styleTags
+// are illustrative, drawn from the same six-tag set roomFilterConfig.ts's
+// Style filter already surfaces.
 const rooms = [
+  // Living Room
   { categorySlug: "living-room", title: "Everyday Comfort", essentialIds: [eid(1001), eid(1003), eid(1005), eid(1007)], styleTags: ["modern", "minimal"] },
+  { categorySlug: "living-room", title: "Urban Loft Lounge", essentialIds: [eid(1009), eid(1012), eid(1014), eid(1016)], styleTags: ["industrial", "smart-tech"] },
+  { categorySlug: "living-room", title: "Classic Elegance", essentialIds: [eid(1002), eid(1004), eid(1006), eid(1008)], styleTags: ["traditional", "contemporary"] },
+  { categorySlug: "living-room", title: "Minimalist Retreat", essentialIds: [eid(1010), eid(1003), eid(1005), eid(1015)], styleTags: ["minimal"] },
+  { categorySlug: "living-room", title: "Contemporary Corner", essentialIds: [eid(1001), eid(1011), eid(1013), eid(1008)], styleTags: ["contemporary", "modern"] },
+  { categorySlug: "living-room", title: "Smart Living Suite", essentialIds: [eid(1009), eid(1011), eid(1014), eid(1016)], styleTags: ["smart-tech", "modern"] },
+  { categorySlug: "living-room", title: "Cozy Traditional", essentialIds: [eid(1002), eid(1003), eid(1006), eid(1007)], styleTags: ["traditional"] },
+  { categorySlug: "living-room", title: "Sleek & Simple", essentialIds: [eid(1010), eid(1011), eid(1005), eid(1015)], styleTags: ["minimal", "modern"] },
+  { categorySlug: "living-room", title: "Industrial Edge", essentialIds: [eid(1009), eid(1012), eid(1013), eid(1015)], styleTags: ["industrial"] },
+  { categorySlug: "living-room", title: "Bright Family Room", essentialIds: [eid(1001), eid(1004), eid(1014), eid(1008)], styleTags: ["contemporary", "traditional"] },
+
+  // Bedroom
   { categorySlug: "bedroom", title: "Restful Retreat", essentialIds: [eid(2001), eid(2003), eid(2005), eid(2007)], styleTags: ["minimal", "traditional"] },
+  { categorySlug: "bedroom", title: "Luxury Suite", essentialIds: [eid(2002), eid(2011), eid(2006), eid(2016)], styleTags: ["contemporary", "smart-tech"] },
+  { categorySlug: "bedroom", title: "Minimalist Haven", essentialIds: [eid(2010), eid(2012), eid(2013), eid(2008)], styleTags: ["minimal"] },
+  { categorySlug: "bedroom", title: "Storage Smart Bedroom", essentialIds: [eid(2009), eid(2003), eid(2013), eid(2015)], styleTags: ["smart-tech", "modern"] },
+  { categorySlug: "bedroom", title: "Compact City Bedroom", essentialIds: [eid(2010), eid(2004), eid(2013), eid(2007)], styleTags: ["minimal", "modern"] },
+  { categorySlug: "bedroom", title: "Traditional Comfort", essentialIds: [eid(2001), eid(2004), eid(2006), eid(2007)], styleTags: ["traditional"] },
+  { categorySlug: "bedroom", title: "Modern Mirrored Suite", essentialIds: [eid(2009), eid(2011), eid(2014), eid(2016)], styleTags: ["modern", "contemporary"] },
+  { categorySlug: "bedroom", title: "Boutique Bedroom", essentialIds: [eid(2002), eid(2012), eid(2006), eid(2015)], styleTags: ["contemporary", "traditional"] },
+  { categorySlug: "bedroom", title: "Airy Open Bedroom", essentialIds: [eid(2010), eid(2012), eid(2014), eid(2008)], styleTags: ["minimal", "contemporary"] },
+  { categorySlug: "bedroom", title: "Elegant Master Suite", essentialIds: [eid(2009), eid(2004), eid(2006), eid(2016)], styleTags: ["modern", "smart-tech"] },
+
+  // Bathroom
   { categorySlug: "bathroom", title: "Fresh Start", essentialIds: [eid(3001), eid(3004), eid(3005), eid(3007)], styleTags: ["modern", "contemporary"] },
+  { categorySlug: "bathroom", title: "Spa Retreat", essentialIds: [eid(3009), eid(3012), eid(3014), eid(3016)], styleTags: ["smart-tech", "contemporary"] },
+  { categorySlug: "bathroom", title: "Compact Powder Room", essentialIds: [eid(3002), eid(3011), eid(3006), eid(3008)], styleTags: ["minimal"] },
+  { categorySlug: "bathroom", title: "Modern Double Vanity", essentialIds: [eid(3009), eid(3003), eid(3013), eid(3015)], styleTags: ["modern", "smart-tech"] },
+  { categorySlug: "bathroom", title: "Minimal Wash Space", essentialIds: [eid(3010), eid(3004), eid(3006), eid(3007)], styleTags: ["minimal", "modern"] },
+  { categorySlug: "bathroom", title: "Smart Mirror Bath", essentialIds: [eid(3002), eid(3012), eid(3013), eid(3016)], styleTags: ["smart-tech"] },
+  { categorySlug: "bathroom", title: "Classic Bathroom", essentialIds: [eid(3001), eid(3011), eid(3005), eid(3008)], styleTags: ["traditional", "contemporary"] },
+  { categorySlug: "bathroom", title: "Floating Elegance", essentialIds: [eid(3010), eid(3003), eid(3014), eid(3015)], styleTags: ["contemporary", "modern"] },
+  { categorySlug: "bathroom", title: "Boutique Ensuite", essentialIds: [eid(3009), eid(3011), eid(3014), eid(3008)], styleTags: ["contemporary"] },
+  { categorySlug: "bathroom", title: "Efficient Studio Bath", essentialIds: [eid(3002), eid(3004), eid(3013), eid(3007)], styleTags: ["minimal"] },
+
+  // Kitchen
   { categorySlug: "kitchen", title: "Family Table", essentialIds: [eid(4001), eid(4003), eid(4005), eid(4007)], styleTags: ["traditional", "contemporary"] },
+  { categorySlug: "kitchen", title: "Grand Gathering", essentialIds: [eid(4009), eid(4011), eid(4013), eid(4015)], styleTags: ["contemporary", "modern"] },
+  { categorySlug: "kitchen", title: "Compact Breakfast Nook", essentialIds: [eid(4010), eid(4004), eid(4014), eid(4008)], styleTags: ["minimal"] },
+  { categorySlug: "kitchen", title: "Smart Kitchen Diner", essentialIds: [eid(4002), eid(4003), eid(4006), eid(4016)], styleTags: ["smart-tech", "modern"] },
+  { categorySlug: "kitchen", title: "Rustic Farmhouse", essentialIds: [eid(4001), eid(4012), eid(4006), eid(4007)], styleTags: ["traditional"] },
+  { categorySlug: "kitchen", title: "Modern Island Kitchen", essentialIds: [eid(4009), eid(4004), eid(4013), eid(4015)], styleTags: ["modern", "contemporary"] },
+  { categorySlug: "kitchen", title: "Minimalist Dining", essentialIds: [eid(4010), eid(4012), eid(4014), eid(4008)], styleTags: ["minimal"] },
+  { categorySlug: "kitchen", title: "Entertainer's Kitchen", essentialIds: [eid(4009), eid(4011), eid(4005), eid(4016)], styleTags: ["contemporary", "smart-tech"] },
+  { categorySlug: "kitchen", title: "Cozy Round Table", essentialIds: [eid(4010), eid(4003), eid(4005), eid(4007)], styleTags: ["traditional", "minimal"] },
+  { categorySlug: "kitchen", title: "Efficient Studio Kitchen", essentialIds: [eid(4002), eid(4004), eid(4014), eid(4008)], styleTags: ["minimal", "modern"] },
 ];
 
 function computeTotalPrice(room) {
