@@ -60,6 +60,44 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
+const MAX_AVAILABILITY_IDS = 50; // mirrors vendorDetailRoutes.ts's own cap
+
+// Registered above the bare "/:id" route below — otherwise that route would
+// swallow this one as id="availability" (same mount-order hazard already
+// documented for /essentials/categories and /essentials/orders in index.ts).
+router.get("/availability", async (req: Request, res: Response) => {
+  try {
+    const ids = parseMultiValue(req.query.ids);
+    if (!ids) {
+      return res.status(400).json({ message: "ids query parameter is required" });
+    }
+    if (ids.length > MAX_AVAILABILITY_IDS) {
+      return res.status(400).json({
+        message: `At most ${MAX_AVAILABILITY_IDS} ids can be checked at once`,
+      });
+    }
+
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    const found = await Essentials.find(
+      { _id: { $in: validIds } },
+      { price: 1 },
+    );
+    const priceById = new Map(
+      found.map((doc) => [doc._id.toString(), doc.get("price") as number]),
+    );
+
+    const essentials = ids.map((id) => ({
+      id,
+      isAvailable: priceById.has(id),
+      price: priceById.get(id) ?? null,
+    }));
+    return res.json({ essentials });
+  } catch (error) {
+    console.error("Failed to check essential availability:", error);
+    return res.status(500).json({ message: "Failed to check essential availability" });
+  }
+});
+
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
