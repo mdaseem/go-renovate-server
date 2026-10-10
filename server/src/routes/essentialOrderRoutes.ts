@@ -50,6 +50,18 @@ function isDuplicateKeyError(error: unknown): boolean {
   );
 }
 
+// Puts back units taken by a checkout that then failed (stock shortage on a
+// later item, or the order document failing to save).
+async function releaseStock(
+  reserved: { id: string; qty: number }[],
+): Promise<void> {
+  await Promise.all(
+    reserved.map(({ id, qty }) =>
+      Essentials.updateOne({ _id: id }, { $inc: { stock: qty } }),
+    ),
+  );
+}
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
@@ -190,6 +202,43 @@ router.post("/", async (req: Request, res: Response) => {
       group.subtotal += price * quantity;
     }
 
+    // Reserve stock atomically per item: the `stock: { $gte: qty }` guard in
+    // the filter makes the check-and-decrement a single operation, so two
+    // simultaneous checkouts can't both take the last unit. Untracked
+    // (no `stock` field) and external-store items are skipped.
+    const quantityById = new Map<string, number>();
+    for (const item of items) {
+      const id = item.essentialId as string;
+      quantityById.set(id, (quantityById.get(id) ?? 0) + Number(item.quantity));
+    }
+    const reserved: { id: string; qty: number }[] = [];
+    const outOfStock: string[] = [];
+    for (const [id, qty] of quantityById) {
+      const essential = essentialById.get(id);
+      if (
+        !essential ||
+        essential.get("purchaseMode") === "external-store" ||
+        typeof essential.get("stock") !== "number"
+      ) {
+        continue;
+      }
+      const result = await Essentials.updateOne(
+        { _id: id, stock: { $gte: qty } },
+        { $inc: { stock: -qty } },
+      );
+      if (result.modifiedCount === 1) {
+        reserved.push({ id, qty });
+      } else {
+        outOfStock.push(essential.get("name") as string);
+      }
+    }
+    if (outOfStock.length > 0) {
+      await releaseStock(reserved);
+      return res.status(409).json({
+        message: `Not enough stock for: ${outOfStock.join(", ")}. Please swap these items and try again.`,
+      });
+    }
+
     const vendorNameById = await getVendorNameMap(
       Array.from(vendorGroups.keys()),
     );
@@ -211,24 +260,29 @@ router.post("/", async (req: Request, res: Response) => {
     );
 
     let order;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      try {
-        order = await EssentialOrders.create({
-          orderNumber: generateOrderNumber(),
-          userId,
-          userEmail,
-          userName,
-          address,
-          total,
-          vendorOrders,
-        });
-        break;
-      } catch (createError) {
-        if (isDuplicateKeyError(createError) && attempt < 2) {
-          continue;
+    try {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          order = await EssentialOrders.create({
+            orderNumber: generateOrderNumber(),
+            userId,
+            userEmail,
+            userName,
+            address,
+            total,
+            vendorOrders,
+          });
+          break;
+        } catch (createError) {
+          if (isDuplicateKeyError(createError) && attempt < 2) {
+            continue;
+          }
+          throw createError;
         }
-        throw createError;
       }
+    } catch (saveError) {
+      await releaseStock(reserved);
+      throw saveError;
     }
 
     return res.status(201).json(order);

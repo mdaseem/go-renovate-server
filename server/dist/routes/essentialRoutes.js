@@ -82,15 +82,24 @@ router.get("/availability", (req, res) => __awaiter(void 0, void 0, void 0, func
             });
         }
         const validIds = ids.filter((id) => mongoose_1.default.Types.ObjectId.isValid(id));
-        const found = yield essentialModel_1.Essentials.find({ _id: { $in: validIds } }, { price: 1 });
-        const priceById = new Map(found.map((doc) => [doc._id.toString(), doc.get("price")]));
+        const found = yield essentialModel_1.Essentials.find({ _id: { $in: validIds } }, { price: 1, stock: 1, purchaseMode: 1 });
+        const docById = new Map(found.map((doc) => [doc._id.toString(), doc]));
+        // Available = still in the catalog AND, for tracked on-platform items,
+        // at least one unit in stock. `stock` is returned (null = untracked) so
+        // the UI can distinguish "out of stock" from "removed" and warn on low
+        // stock.
         const essentials = ids.map((id) => {
-            var _a;
-            return ({
+            const doc = docById.get(id);
+            if (!doc)
+                return { id, isAvailable: false, price: null, stock: null };
+            const stock = doc.get("stock");
+            const isTracked = doc.get("purchaseMode") !== "external-store" && typeof stock === "number";
+            return {
                 id,
-                isAvailable: priceById.has(id),
-                price: (_a = priceById.get(id)) !== null && _a !== void 0 ? _a : null,
-            });
+                isAvailable: !isTracked || stock > 0,
+                price: doc.get("price"),
+                stock: isTracked ? stock : null,
+            };
         });
         return res.json({ essentials });
     }

@@ -49,6 +49,13 @@ function isDuplicateKeyError(error) {
         error !== null &&
         error.code === 11000);
 }
+// Puts back units taken by a checkout that then failed (stock shortage on a
+// later item, or the order document failing to save).
+function releaseStock(reserved) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield Promise.all(reserved.map(({ id, qty }) => essentialModel_1.Essentials.updateOne({ _id: id }, { $inc: { stock: qty } })));
+    });
+}
 function isNonEmptyString(value) {
     return typeof value === "string" && value.trim().length > 0;
 }
@@ -78,6 +85,7 @@ function validateAddress(address) {
     return null;
 }
 router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { userId, userEmail, userName } = getAuthedUser(req);
         if (!userEmail) {
@@ -144,6 +152,38 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             });
             group.subtotal += price * quantity;
         }
+        // Reserve stock atomically per item: the `stock: { $gte: qty }` guard in
+        // the filter makes the check-and-decrement a single operation, so two
+        // simultaneous checkouts can't both take the last unit. Untracked
+        // (no `stock` field) and external-store items are skipped.
+        const quantityById = new Map();
+        for (const item of items) {
+            const id = item.essentialId;
+            quantityById.set(id, ((_a = quantityById.get(id)) !== null && _a !== void 0 ? _a : 0) + Number(item.quantity));
+        }
+        const reserved = [];
+        const outOfStock = [];
+        for (const [id, qty] of quantityById) {
+            const essential = essentialById.get(id);
+            if (!essential ||
+                essential.get("purchaseMode") === "external-store" ||
+                typeof essential.get("stock") !== "number") {
+                continue;
+            }
+            const result = yield essentialModel_1.Essentials.updateOne({ _id: id, stock: { $gte: qty } }, { $inc: { stock: -qty } });
+            if (result.modifiedCount === 1) {
+                reserved.push({ id, qty });
+            }
+            else {
+                outOfStock.push(essential.get("name"));
+            }
+        }
+        if (outOfStock.length > 0) {
+            yield releaseStock(reserved);
+            return res.status(409).json({
+                message: `Not enough stock for: ${outOfStock.join(", ")}. Please swap these items and try again.`,
+            });
+        }
         const vendorNameById = yield (0, vendorNameLookup_1.getVendorNameMap)(Array.from(vendorGroups.keys()));
         const vendorOrders = Array.from(vendorGroups.entries()).map(([vendorId, group]) => {
             var _a;
@@ -158,25 +198,31 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
         const total = vendorOrders.reduce((sum, vendorOrder) => sum + vendorOrder.subtotal, 0);
         let order;
-        for (let attempt = 0; attempt < 3; attempt += 1) {
-            try {
-                order = yield essentialOrderModel_1.EssentialOrders.create({
-                    orderNumber: generateOrderNumber(),
-                    userId,
-                    userEmail,
-                    userName,
-                    address,
-                    total,
-                    vendorOrders,
-                });
-                break;
-            }
-            catch (createError) {
-                if (isDuplicateKeyError(createError) && attempt < 2) {
-                    continue;
+        try {
+            for (let attempt = 0; attempt < 3; attempt += 1) {
+                try {
+                    order = yield essentialOrderModel_1.EssentialOrders.create({
+                        orderNumber: generateOrderNumber(),
+                        userId,
+                        userEmail,
+                        userName,
+                        address,
+                        total,
+                        vendorOrders,
+                    });
+                    break;
                 }
-                throw createError;
+                catch (createError) {
+                    if (isDuplicateKeyError(createError) && attempt < 2) {
+                        continue;
+                    }
+                    throw createError;
+                }
             }
+        }
+        catch (saveError) {
+            yield releaseStock(reserved);
+            throw saveError;
         }
         return res.status(201).json(order);
     }

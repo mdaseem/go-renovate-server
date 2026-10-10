@@ -2,6 +2,7 @@ import express, { Request, Response, Router } from "express";
 import { Categories } from "../models/categoryModel";
 import { Rooms } from "../models/roomModel";
 import { Essentials } from "../models/essentialModel";
+import { Spaces } from "../models/spaceModel";
 import { getVendorNameMap } from "../services/vendorNameLookup";
 
 const router: Router = express.Router();
@@ -47,9 +48,11 @@ router.get("/:slug", async (req: Request, res: Response) => {
       roomFilter.totalPrice = priceFilter;
     }
 
-    const [rooms, essentials] = await Promise.all([
+    const [rooms, essentials, spaces] = await Promise.all([
       Rooms.find(roomFilter),
       Essentials.find({ categorySlugs: slug }),
+      // Selectable base layouts for the Customize preview, default first.
+      Spaces.find({ categorySlug: slug }).sort({ isDefault: -1, sortOrder: 1 }),
     ]);
 
     const vendorNameById = await getVendorNameMap(
@@ -66,7 +69,7 @@ router.get("/:slug", async (req: Request, res: Response) => {
       essentialsBySlot[slot].push(plain);
     }
 
-    return res.json({ category, rooms, essentialsBySlot });
+    return res.json({ category, rooms, essentialsBySlot, spaces });
   } catch (error) {
     console.error("Failed to fetch category detail:", error);
     return res.status(500).json({ message: "Failed to fetch category detail" });
