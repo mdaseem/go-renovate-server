@@ -15,6 +15,10 @@ const RoomSchema = new Schema({
   // for now) — avoids an aggregation query on every filter/list request.
   totalPrice: { type: Number, default: 0 },
   styleTags: [String],
+  // The Space (base layout, see models/spaceModel.ts) this curated Room is shown
+  // in — in Browse All previews and the Room-detail overlay. Optional: a Room
+  // without one (or with an unknown slug) uses its category's default space.
+  spaceSlug: String,
 });
 
 RoomSchema.index({ categorySlug: 1 });

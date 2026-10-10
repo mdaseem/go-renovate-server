@@ -1,6 +1,22 @@
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
+// Visual-preview data (see the room-visual-preview skill). All optional: a
+// product without them still works everywhere; the scene just falls back to a
+// labelled tile at a default size.
+const DimensionsSchema = new Schema(
+  { w: Number, h: Number, d: Number }, // centimetres
+  { _id: false },
+);
+const PlacementSchema = new Schema(
+  {
+    zone: { type: String, enum: ["floor", "wall", "ceiling"], default: "floor" },
+    // Paint order within a zone. Lower sits further back (e.g. a rug = 0).
+    layer: { type: Number, default: 1 },
+  },
+  { _id: false },
+);
+
 const EssentialSchema = new Schema({
   name: { type: String, required: true },
   description: String,
@@ -16,6 +32,15 @@ const EssentialSchema = new Schema({
     default: "on-platform",
   },
   externalStoreUrl: String,
+  // Units available for on-platform purchase. Left unset on purpose = "not
+  // tracked" (treated as in stock), so existing documents keep working with
+  // no migration. external-store items ignore it — the vendor's own store
+  // owns that inventory.
+  stock: { type: Number, min: 0 },
+  // Transparent, tightly-cropped, front-view image supplied by the vendor.
+  cutoutUrl: String,
+  dimensionsCm: DimensionsSchema,
+  placement: PlacementSchema,
 });
 
 // Supports GET /essentials query-param filtering (category, slot, vendorId, price range, purchaseMode)

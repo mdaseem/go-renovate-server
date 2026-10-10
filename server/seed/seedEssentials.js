@@ -1,5 +1,6 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
+const { spaceSlugForRoom } = require("./roomSpaces");
 
 const { DB_USER, DB_PASS, DB_HOST, DB_NAME } = process.env;
 
@@ -14,6 +15,10 @@ const EssentialSchema = new mongoose.Schema({
   slot: String,
   purchaseMode: String,
   externalStoreUrl: String,
+  stock: Number,
+  cutoutUrl: String,
+  dimensionsCm: { w: Number, h: Number, d: Number },
+  placement: { zone: String, layer: Number },
 });
 const Essentials = mongoose.model("essential", EssentialSchema, "essentials");
 
@@ -27,6 +32,7 @@ const CategorySchema = new mongoose.Schema({
   icon: String,
   slots: [CategorySlotSchema],
   sortOrder: Number,
+  scene: { backdrop: String, sceneWidthCm: Number, floorLine: Number },
 });
 const Categories = mongoose.model("category", CategorySchema, "categories");
 
@@ -37,6 +43,7 @@ const RoomSchema = new mongoose.Schema({
   heroImageUrl: String,
   totalPrice: Number,
   styleTags: [String],
+  spaceSlug: String,
 });
 const Rooms = mongoose.model("room", RoomSchema, "rooms");
 
@@ -53,6 +60,7 @@ const categories = [
     name: "Living Room",
     icon: "🛋️",
     sortOrder: 1,
+    scene: { backdrop: "living-room", sceneWidthCm: 450, floorLine: 0.6 },
     slots: [
       { id: "sofa", label: "Sofa" },
       { id: "coffee-table", label: "Coffee Table" },
@@ -101,6 +109,31 @@ const categories = [
 // vendorId values reuse real vendors already seeded in vendorDetails.seed.json
 // (2 = ModuKitchens Co., 3 = AquaFit Bath Studio, 4 = BrightSpark Electricals,
 // 5 = ColorCraft Painters) — there's no separate home-decor vendor pool yet.
+const DEFAULT_STOCK = 25;
+
+// Preview data for the Living Room catalogue. The cutouts are flat-illustration
+// PLACEHOLDERS served from the frontend's /public (stand-ins for the
+// transparent images vendors will supply). dimensionsCm: w/h/d in centimetres.
+const LR = "/essentials/living-room/";
+const previewData = {
+  1001: { cutoutUrl: LR + "sofa-modern-3-seater.svg", dimensionsCm: { w: 210, h: 85, d: 90 }, placement: { zone: "floor", layer: 1 } },
+  1002: { cutoutUrl: LR + "sofa-velvet-loveseat.svg", dimensionsCm: { w: 150, h: 85, d: 85 }, placement: { zone: "floor", layer: 1 } },
+  1003: { cutoutUrl: LR + "table-oak.svg", dimensionsCm: { w: 110, h: 45, d: 60 }, placement: { zone: "floor", layer: 2 } },
+  1004: { cutoutUrl: LR + "table-marble.svg", dimensionsCm: { w: 100, h: 42, d: 55 }, placement: { zone: "floor", layer: 2 } },
+  1005: { cutoutUrl: LR + "rug-jute.svg", dimensionsCm: { w: 200, h: 2, d: 140 }, placement: { zone: "floor", layer: 0 } },
+  1006: { cutoutUrl: LR + "rug-persian.svg", dimensionsCm: { w: 240, h: 2, d: 170 }, placement: { zone: "floor", layer: 0 } },
+  1007: { cutoutUrl: LR + "lamp-arc-floor.svg", dimensionsCm: { w: 120, h: 190, d: 40 }, placement: { zone: "floor", layer: 1 } },
+  1008: { cutoutUrl: LR + "lamp-pendant-cluster.svg", dimensionsCm: { w: 70, h: 120, d: 70 }, placement: { zone: "ceiling", layer: 1 } },
+  1009: { cutoutUrl: LR + "sofa-l-sectional.svg", dimensionsCm: { w: 280, h: 85, d: 160 }, placement: { zone: "floor", layer: 1 } },
+  1010: { cutoutUrl: LR + "sofa-compact-2-seater.svg", dimensionsCm: { w: 140, h: 82, d: 80 }, placement: { zone: "floor", layer: 1 } },
+  1011: { cutoutUrl: LR + "table-glass.svg", dimensionsCm: { w: 105, h: 42, d: 55 }, placement: { zone: "floor", layer: 2 } },
+  1012: { cutoutUrl: LR + "table-industrial.svg", dimensionsCm: { w: 100, h: 45, d: 55 }, placement: { zone: "floor", layer: 2 } },
+  1013: { cutoutUrl: LR + "rug-geometric.svg", dimensionsCm: { w: 200, h: 2, d: 140 }, placement: { zone: "floor", layer: 0 } },
+  1014: { cutoutUrl: LR + "rug-shag.svg", dimensionsCm: { w: 160, h: 2, d: 120 }, placement: { zone: "floor", layer: 0 } },
+  1015: { cutoutUrl: LR + "lamp-tripod-floor.svg", dimensionsCm: { w: 55, h: 160, d: 55 }, placement: { zone: "floor", layer: 1 } },
+  1016: { cutoutUrl: LR + "lamp-led-panel.svg", dimensionsCm: { w: 70, h: 7, d: 70 }, placement: { zone: "ceiling", layer: 1 } },
+};
+
 const essentials = [
   // Living Room (1xxx)
   { _id: eid(1001), name: "Modern 3-Seater Sofa", price: 24999, vendorId: "2", categorySlugs: ["living-room"], slot: "sofa", purchaseMode: "on-platform", images: [] },
@@ -261,6 +294,15 @@ async function seed() {
   // adds/overwrites, never removes.
   for (const essential of essentials) {
     const { _id, ...rest } = essential;
+    // Starting inventory for on-platform items (external-store items are
+    // stocked by the vendor's own store, so they stay untracked). Set an
+    // explicit `stock` on an entry above to override — e.g. stock: 0 to try
+    // the out-of-stock UI. NOTE: replaceOne resets stock to this value on
+    // every re-seed, so don't re-run this against a DB with real orders.
+    if (rest.purchaseMode === "on-platform" && rest.stock === undefined) {
+      rest.stock = DEFAULT_STOCK;
+    }
+    Object.assign(rest, previewData[parseInt(_id.toHexString(), 16)]);
     await Essentials.replaceOne({ _id }, rest, { upsert: true });
   }
   console.log(`Seeded ${essentials.length} essentials into "essentials"`);
@@ -277,7 +319,11 @@ async function seed() {
   }
 
   for (const room of rooms) {
-    const doc = { ...room, totalPrice: computeTotalPrice(room) };
+    const doc = {
+      ...room,
+      totalPrice: computeTotalPrice(room),
+      spaceSlug: spaceSlugForRoom(room),
+    };
     await Rooms.replaceOne(
       { categorySlug: room.categorySlug, title: room.title },
       doc,

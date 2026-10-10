@@ -80,17 +80,27 @@ router.get("/availability", async (req: Request, res: Response) => {
     const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
     const found = await Essentials.find(
       { _id: { $in: validIds } },
-      { price: 1 },
+      { price: 1, stock: 1, purchaseMode: 1 },
     );
-    const priceById = new Map(
-      found.map((doc) => [doc._id.toString(), doc.get("price") as number]),
-    );
+    const docById = new Map(found.map((doc) => [doc._id.toString(), doc]));
 
-    const essentials = ids.map((id) => ({
-      id,
-      isAvailable: priceById.has(id),
-      price: priceById.get(id) ?? null,
-    }));
+    // Available = still in the catalog AND, for tracked on-platform items,
+    // at least one unit in stock. `stock` is returned (null = untracked) so
+    // the UI can distinguish "out of stock" from "removed" and warn on low
+    // stock.
+    const essentials = ids.map((id) => {
+      const doc = docById.get(id);
+      if (!doc) return { id, isAvailable: false, price: null, stock: null };
+      const stock = doc.get("stock") as number | undefined;
+      const isTracked =
+        doc.get("purchaseMode") !== "external-store" && typeof stock === "number";
+      return {
+        id,
+        isAvailable: !isTracked || (stock as number) > 0,
+        price: doc.get("price") as number,
+        stock: isTracked ? (stock as number) : null,
+      };
+    });
     return res.json({ essentials });
   } catch (error) {
     console.error("Failed to check essential availability:", error);

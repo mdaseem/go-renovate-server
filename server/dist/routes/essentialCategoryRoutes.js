@@ -16,6 +16,7 @@ const express_1 = __importDefault(require("express"));
 const categoryModel_1 = require("../models/categoryModel");
 const roomModel_1 = require("../models/roomModel");
 const essentialModel_1 = require("../models/essentialModel");
+const spaceModel_1 = require("../models/spaceModel");
 const vendorNameLookup_1 = require("../services/vendorNameLookup");
 const router = express_1.default.Router();
 function parseMultiValue(value) {
@@ -58,9 +59,11 @@ router.get("/:slug", (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 priceFilter.$lte = max;
             roomFilter.totalPrice = priceFilter;
         }
-        const [rooms, essentials] = yield Promise.all([
+        const [rooms, essentials, spaces] = yield Promise.all([
             roomModel_1.Rooms.find(roomFilter),
             essentialModel_1.Essentials.find({ categorySlugs: slug }),
+            // Selectable base layouts for the Customize preview, default first.
+            spaceModel_1.Spaces.find({ categorySlug: slug }).sort({ isDefault: -1, sortOrder: 1 }),
         ]);
         const vendorNameById = yield (0, vendorNameLookup_1.getVendorNameMap)(essentials.map((essential) => essential.get("vendorId")));
         const essentialsBySlot = {};
@@ -73,7 +76,7 @@ router.get("/:slug", (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 essentialsBySlot[slot] = [];
             essentialsBySlot[slot].push(plain);
         }
-        return res.json({ category, rooms, essentialsBySlot });
+        return res.json({ category, rooms, essentialsBySlot, spaces });
     }
     catch (error) {
         console.error("Failed to fetch category detail:", error);
