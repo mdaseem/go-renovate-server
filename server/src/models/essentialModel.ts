@@ -10,9 +10,21 @@ const DimensionsSchema = new Schema(
 );
 const PlacementSchema = new Schema(
   {
-    zone: { type: String, enum: ["floor", "wall", "ceiling"], default: "floor" },
+    // "surface" = rests ON another piece (a plant on a table, a vase on a shelf).
+    zone: {
+      type: String,
+      enum: ["floor", "wall", "ceiling", "surface"],
+      default: "floor",
+    },
     // Paint order within a zone. Lower sits further back (e.g. a rug = 0).
     layer: { type: Number, default: 1 },
+    // WALL pieces only: height of the piece's CENTRE above the floor, in cm
+    // (frames/mirrors ~150, lights ~170, shelves ~120). The preview hangs the
+    // piece there by default and lets the user move it up and down the wall.
+    elevationCm: { type: Number, min: 0, max: 600 },
+    // True on floor/wall pieces that can hold surface pieces (tables, consoles,
+    // wall shelves). The resting surface is the piece's top edge.
+    supports: Boolean,
   },
   { _id: false },
 );

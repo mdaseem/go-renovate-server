@@ -84,6 +84,26 @@ const spaces = [
     },
   },
 
+  {
+    slug: "living-bookcase",
+    categorySlug: "living-room",
+    name: "Living room — bookcase wall",
+    description:
+      "A wall of shelves — rest plants, vases, books and lamps on each shelf.",
+    sortOrder: 3,
+    sceneWidthCm: 320,
+    ceilingHeightCm: 260,
+    spec: {
+      wall: { color: "#ece4d6", shade: "#e2d8c6", pattern: "plain" },
+      floor: { color: "#bfa27a", lineColor: "#ab8e66" },
+      baseboard: "#faf6ee",
+      fixtures: [
+        { type: "bookcase", xCm: 30, bottomCm: 0, widthCm: 260, heightCm: 220, rows: 5, columns: 3 },
+      ],
+      zones: ALL_ZONES,
+    },
+  },
+
   // ── Bedroom ──────────────────────────────────────────────────────────
   {
     slug: "bedroom-window-wall",

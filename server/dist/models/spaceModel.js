@@ -18,7 +18,16 @@ const Schema = mongoose_1.default.Schema;
 // cm dimensions) are drawn to scale against the room: the room's width and
 // ceiling height, and each fixture's position and size.
 exports.SPACE_KINDS = ["room-elevation", "shelf-grid", "plan"];
-exports.FIXTURE_TYPES = ["window", "door", "artframe", "counter"];
+// "bookcase" is a shelving unit (rows × columns of compartments). Like a
+// "counter", it is also a SUPPORT: pieces with zone "surface" can rest on its
+// shelves / worktop (see the room-visual-preview skill).
+exports.FIXTURE_TYPES = [
+    "window",
+    "door",
+    "artframe",
+    "counter",
+    "bookcase",
+];
 const FixtureSchema = new Schema({
     type: { type: String, enum: exports.FIXTURE_TYPES, required: true },
     // Current (cm) geometry: distance from the left wall, height of its bottom
@@ -28,6 +37,9 @@ const FixtureSchema = new Schema({
     widthCm: Number,
     heightCm: Number,
     color: String,
+    // bookcase only: compartments stacked (rows) and side by side (columns).
+    rows: { type: Number, min: 1, max: 12 },
+    columns: { type: Number, min: 1, max: 8 },
     // LEGACY geometry (0–1 fractions of the old fixed 16:10 box). Only present
     // on spaces seeded before the true-scale model; the frontend converts them.
     x: Number,
