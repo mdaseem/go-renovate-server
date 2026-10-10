@@ -18,7 +18,7 @@ const EssentialSchema = new mongoose.Schema({
   stock: Number,
   cutoutUrl: String,
   dimensionsCm: { w: Number, h: Number, d: Number },
-  placement: { zone: String, layer: Number },
+  placement: { zone: String, layer: Number, elevationCm: Number, supports: Boolean },
 });
 const Essentials = mongoose.model("essential", EssentialSchema, "essentials");
 
@@ -66,6 +66,8 @@ const categories = [
       { id: "coffee-table", label: "Coffee Table" },
       { id: "rug", label: "Rug" },
       { id: "lighting", label: "Lighting" },
+      { id: "wall-decor", label: "Wall decor" },
+      { id: "decor", label: "Decor" },
     ],
   },
   {
@@ -118,19 +120,27 @@ const LR = "/essentials/living-room/";
 const previewData = {
   1001: { cutoutUrl: LR + "sofa-modern-3-seater.svg", dimensionsCm: { w: 210, h: 85, d: 90 }, placement: { zone: "floor", layer: 1 } },
   1002: { cutoutUrl: LR + "sofa-velvet-loveseat.svg", dimensionsCm: { w: 150, h: 85, d: 85 }, placement: { zone: "floor", layer: 1 } },
-  1003: { cutoutUrl: LR + "table-oak.svg", dimensionsCm: { w: 110, h: 45, d: 60 }, placement: { zone: "floor", layer: 2 } },
-  1004: { cutoutUrl: LR + "table-marble.svg", dimensionsCm: { w: 100, h: 42, d: 55 }, placement: { zone: "floor", layer: 2 } },
+  1003: { cutoutUrl: LR + "table-oak.svg", dimensionsCm: { w: 110, h: 45, d: 60 }, placement: { zone: "floor", layer: 2, supports: true } },
+  1004: { cutoutUrl: LR + "table-marble.svg", dimensionsCm: { w: 100, h: 42, d: 55 }, placement: { zone: "floor", layer: 2, supports: true } },
   1005: { cutoutUrl: LR + "rug-jute.svg", dimensionsCm: { w: 200, h: 2, d: 140 }, placement: { zone: "floor", layer: 0 } },
   1006: { cutoutUrl: LR + "rug-persian.svg", dimensionsCm: { w: 240, h: 2, d: 170 }, placement: { zone: "floor", layer: 0 } },
   1007: { cutoutUrl: LR + "lamp-arc-floor.svg", dimensionsCm: { w: 120, h: 190, d: 40 }, placement: { zone: "floor", layer: 1 } },
   1008: { cutoutUrl: LR + "lamp-pendant-cluster.svg", dimensionsCm: { w: 70, h: 120, d: 70 }, placement: { zone: "ceiling", layer: 1 } },
   1009: { cutoutUrl: LR + "sofa-l-sectional.svg", dimensionsCm: { w: 280, h: 85, d: 160 }, placement: { zone: "floor", layer: 1 } },
   1010: { cutoutUrl: LR + "sofa-compact-2-seater.svg", dimensionsCm: { w: 140, h: 82, d: 80 }, placement: { zone: "floor", layer: 1 } },
-  1011: { cutoutUrl: LR + "table-glass.svg", dimensionsCm: { w: 105, h: 42, d: 55 }, placement: { zone: "floor", layer: 2 } },
-  1012: { cutoutUrl: LR + "table-industrial.svg", dimensionsCm: { w: 100, h: 45, d: 55 }, placement: { zone: "floor", layer: 2 } },
+  1011: { cutoutUrl: LR + "table-glass.svg", dimensionsCm: { w: 105, h: 42, d: 55 }, placement: { zone: "floor", layer: 2, supports: true } },
+  1012: { cutoutUrl: LR + "table-industrial.svg", dimensionsCm: { w: 100, h: 45, d: 55 }, placement: { zone: "floor", layer: 2, supports: true } },
   1013: { cutoutUrl: LR + "rug-geometric.svg", dimensionsCm: { w: 200, h: 2, d: 140 }, placement: { zone: "floor", layer: 0 } },
   1014: { cutoutUrl: LR + "rug-shag.svg", dimensionsCm: { w: 160, h: 2, d: 120 }, placement: { zone: "floor", layer: 0 } },
   1015: { cutoutUrl: LR + "lamp-tripod-floor.svg", dimensionsCm: { w: 55, h: 160, d: 55 }, placement: { zone: "floor", layer: 1 } },
+  1021: { cutoutUrl: LR + "decor-plant.svg", dimensionsCm: { w: 30, h: 45, d: 30 }, placement: { zone: "surface", layer: 2 } },
+  1022: { cutoutUrl: LR + "decor-vase.svg", dimensionsCm: { w: 18, h: 35, d: 18 }, placement: { zone: "surface", layer: 2 } },
+  1023: { cutoutUrl: LR + "decor-table-lamp.svg", dimensionsCm: { w: 25, h: 45, d: 25 }, placement: { zone: "surface", layer: 2 } },
+  1024: { cutoutUrl: LR + "decor-books.svg", dimensionsCm: { w: 28, h: 12, d: 20 }, placement: { zone: "surface", layer: 2 } },
+  1017: { cutoutUrl: LR + "wall-sconce.svg", dimensionsCm: { w: 20, h: 28, d: 15 }, placement: { zone: "wall", layer: 1, elevationCm: 170 } },
+  1018: { cutoutUrl: LR + "wall-mirror-round.svg", dimensionsCm: { w: 60, h: 60, d: 3 }, placement: { zone: "wall", layer: 1, elevationCm: 150 } },
+  1019: { cutoutUrl: LR + "wall-frame-landscape.svg", dimensionsCm: { w: 70, h: 50, d: 3 }, placement: { zone: "wall", layer: 1, elevationCm: 150 } },
+  1020: { cutoutUrl: LR + "wall-shelf.svg", dimensionsCm: { w: 90, h: 22, d: 22 }, placement: { zone: "wall", layer: 1, elevationCm: 120, supports: true } },
   1016: { cutoutUrl: LR + "lamp-led-panel.svg", dimensionsCm: { w: 70, h: 7, d: 70 }, placement: { zone: "ceiling", layer: 1 } },
 };
 
@@ -152,6 +162,14 @@ const essentials = [
   { _id: eid(1014), name: "Shag Rug", price: 4499, vendorId: "5", categorySlugs: ["living-room"], slot: "rug", purchaseMode: "on-platform", images: [] },
   { _id: eid(1015), name: "Tripod Floor Lamp", price: 3799, vendorId: "4", categorySlugs: ["living-room"], slot: "lighting", purchaseMode: "on-platform", images: [] },
   { _id: eid(1016), name: "Smart LED Ceiling Panel", price: 6999, vendorId: "4", categorySlugs: ["living-room"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1017), name: "Brass Wall Sconce", price: 2999, vendorId: "4", categorySlugs: ["living-room"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1018), name: "Round Wall Mirror", price: 3499, vendorId: "3", categorySlugs: ["living-room"], slot: "wall-decor", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1019), name: "Framed Landscape Print", price: 1999, vendorId: "5", categorySlugs: ["living-room"], slot: "wall-decor", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1020), name: "Floating Wall Shelf", price: 2499, vendorId: "2", categorySlugs: ["living-room"], slot: "wall-decor", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1021), name: "Potted Fern", price: 899, vendorId: "5", categorySlugs: ["living-room"], slot: "decor", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1022), name: "Ceramic Vase", price: 1299, vendorId: "3", categorySlugs: ["living-room"], slot: "decor", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1023), name: "Table Lamp", price: 1799, vendorId: "4", categorySlugs: ["living-room"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(1024), name: "Stack of Books", price: 699, vendorId: "2", categorySlugs: ["living-room"], slot: "decor", purchaseMode: "on-platform", images: [] },
 
   // Bedroom (2xxx)
   { _id: eid(2001), name: "Queen Platform Bed", price: 32999, vendorId: "2", categorySlugs: ["bedroom"], slot: "bed", purchaseMode: "on-platform", images: [] },
