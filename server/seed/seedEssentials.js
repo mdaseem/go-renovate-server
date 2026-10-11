@@ -80,6 +80,9 @@ const categories = [
       { id: "wardrobe", label: "Wardrobe" },
       { id: "bedside-table", label: "Bedside Table" },
       { id: "lighting", label: "Lighting" },
+      { id: "rug", label: "Rug" },
+      { id: "wall-decor", label: "Wall decor" },
+      { id: "decor", label: "Decor" },
     ],
   },
   {
@@ -92,6 +95,8 @@ const categories = [
       { id: "mirror", label: "Mirror" },
       { id: "storage", label: "Storage" },
       { id: "lighting", label: "Lighting" },
+      { id: "accessories", label: "Accessories" },
+      { id: "rug", label: "Bath mat" },
     ],
   },
   {
@@ -104,6 +109,9 @@ const categories = [
       { id: "chairs", label: "Chairs" },
       { id: "storage", label: "Storage" },
       { id: "lighting", label: "Lighting" },
+      { id: "countertop", label: "Countertop" },
+      { id: "wall-decor", label: "Wall decor" },
+      { id: "rug", label: "Rug" },
     ],
   },
 ];
@@ -143,6 +151,89 @@ const previewData = {
   1020: { cutoutUrl: LR + "wall-shelf.svg", dimensionsCm: { w: 90, h: 22, d: 22 }, placement: { zone: "wall", layer: 1, elevationCm: 120, supports: true } },
   1016: { cutoutUrl: LR + "lamp-led-panel.svg", dimensionsCm: { w: 70, h: 7, d: 70 }, placement: { zone: "ceiling", layer: 1 } },
 };
+
+// Bedroom: same idea — PLACEHOLDER flat-illustration cutouts in /public/essentials/bedroom
+// (a few reuse the living-room art: decor, rug and print). Sizes in cm, front view.
+const BR = "/essentials/bedroom/";
+Object.assign(previewData, {
+  2001: { cutoutUrl: BR + "bed-queen-platform.svg", dimensionsCm: { w: 165, h: 105, d: 215 }, placement: { zone: "floor", layer: 1 } },
+  2002: { cutoutUrl: BR + "bed-king-upholstered.svg", dimensionsCm: { w: 190, h: 120, d: 215 }, placement: { zone: "floor", layer: 1 } },
+  2003: { cutoutUrl: BR + "wardrobe-sliding-3door.svg", dimensionsCm: { w: 180, h: 210, d: 60 }, placement: { zone: "floor", layer: 1 } },
+  2004: { cutoutUrl: BR + "wardrobe-compact-2door.svg", dimensionsCm: { w: 90, h: 190, d: 50 }, placement: { zone: "floor", layer: 1 } },
+  2005: { cutoutUrl: BR + "nightstand-walnut.svg", dimensionsCm: { w: 45, h: 55, d: 40 }, placement: { zone: "floor", layer: 1, supports: true } },
+  2006: { cutoutUrl: BR + "nightstand-marble-round.svg", dimensionsCm: { w: 42, h: 50, d: 42 }, placement: { zone: "floor", layer: 1, supports: true } },
+  2007: { cutoutUrl: LR + "decor-table-lamp.svg", dimensionsCm: { w: 22, h: 40, d: 22 }, placement: { zone: "surface", layer: 2 } },
+  2008: { cutoutUrl: BR + "lamp-reading-wall.svg", dimensionsCm: { w: 30, h: 28, d: 25 }, placement: { zone: "wall", layer: 1, elevationCm: 140 } },
+  2009: { cutoutUrl: BR + "bed-storage-drawers.svg", dimensionsCm: { w: 170, h: 95, d: 215 }, placement: { zone: "floor", layer: 1 } },
+  2010: { cutoutUrl: BR + "bed-minimalist-frame.svg", dimensionsCm: { w: 160, h: 70, d: 210 }, placement: { zone: "floor", layer: 1 } },
+  2011: { cutoutUrl: BR + "wardrobe-mirrored-4door.svg", dimensionsCm: { w: 240, h: 215, d: 60 }, placement: { zone: "floor", layer: 1 } },
+  2012: { cutoutUrl: BR + "wardrobe-open-shelf.svg", dimensionsCm: { w: 100, h: 190, d: 45 }, placement: { zone: "floor", layer: 1 } },
+  2013: { cutoutUrl: BR + "shelf-floating-bedside.svg", dimensionsCm: { w: 40, h: 12, d: 20 }, placement: { zone: "wall", layer: 1, elevationCm: 55, supports: true } },
+  2014: { cutoutUrl: BR + "nightstand-rattan.svg", dimensionsCm: { w: 45, h: 55, d: 40 }, placement: { zone: "floor", layer: 1, supports: true } },
+  2015: { cutoutUrl: BR + "lamp-pendant-single.svg", dimensionsCm: { w: 25, h: 90, d: 25 }, placement: { zone: "ceiling", layer: 1 } },
+  2016: { cutoutUrl: BR + "lamp-bedside-smart.svg", dimensionsCm: { w: 16, h: 32, d: 16 }, placement: { zone: "surface", layer: 2 } },
+  2017: { cutoutUrl: LR + "rug-shag.svg", dimensionsCm: { w: 200, h: 2, d: 150 }, placement: { zone: "floor", layer: 0 } },
+  2018: { cutoutUrl: LR + "wall-frame-landscape.svg", dimensionsCm: { w: 80, h: 57, d: 3 }, placement: { zone: "wall", layer: 1, elevationCm: 150 } },
+  2019: { cutoutUrl: BR + "wall-mirror-arched.svg", dimensionsCm: { w: 50, h: 120, d: 3 }, placement: { zone: "wall", layer: 1, elevationCm: 125 } },
+  2020: { cutoutUrl: LR + "decor-plant.svg", dimensionsCm: { w: 26, h: 39, d: 26 }, placement: { zone: "surface", layer: 2 } },
+});
+
+// Kitchen: PLACEHOLDER flat-illustration cutouts in /public/essentials/kitchen.
+// Chair/stool SETS are drawn as a row of the whole set (the preview is illustrative).
+const KT = "/essentials/kitchen/";
+Object.assign(previewData, {
+  4001: { cutoutUrl: KT + "dining-table-4seat.svg", dimensionsCm: { w: 120, h: 75, d: 75 }, placement: { zone: "floor", layer: 2, supports: true } },
+  4002: { cutoutUrl: KT + "dining-table-extendable.svg", dimensionsCm: { w: 160, h: 75, d: 80 }, placement: { zone: "floor", layer: 2, supports: true } },
+  4003: { cutoutUrl: KT + "chairs-set-4.svg", dimensionsCm: { w: 168, h: 92, d: 45 }, placement: { zone: "floor", layer: 3 } },
+  4004: { cutoutUrl: KT + "stools-bar-2.svg", dimensionsCm: { w: 80, h: 70, d: 40 }, placement: { zone: "floor", layer: 3 } },
+  4005: { cutoutUrl: KT + "rack-modular.svg", dimensionsCm: { w: 90, h: 180, d: 40 }, placement: { zone: "floor", layer: 1 } },
+  4006: { cutoutUrl: KT + "pantry-unit.svg", dimensionsCm: { w: 80, h: 200, d: 45 }, placement: { zone: "floor", layer: 1 } },
+  4007: { cutoutUrl: KT + "pendant-set-3.svg", dimensionsCm: { w: 110, h: 85, d: 20 }, placement: { zone: "ceiling", layer: 1 } },
+  4008: { cutoutUrl: KT + "led-strip.svg", dimensionsCm: { w: 90, h: 4, d: 3 }, placement: { zone: "wall", layer: 1, elevationCm: 135 } },
+  4009: { cutoutUrl: KT + "dining-table-6seat.svg", dimensionsCm: { w: 180, h: 75, d: 90 }, placement: { zone: "floor", layer: 2, supports: true } },
+  4010: { cutoutUrl: KT + "dining-table-round.svg", dimensionsCm: { w: 110, h: 75, d: 110 }, placement: { zone: "floor", layer: 2, supports: true } },
+  4011: { cutoutUrl: KT + "chairs-set-6.svg", dimensionsCm: { w: 252, h: 92, d: 45 }, placement: { zone: "floor", layer: 3 } },
+  4012: { cutoutUrl: KT + "chairs-wicker-4.svg", dimensionsCm: { w: 168, h: 90, d: 45 }, placement: { zone: "floor", layer: 3 } },
+  4013: { cutoutUrl: KT + "island-cart.svg", dimensionsCm: { w: 110, h: 90, d: 55 }, placement: { zone: "floor", layer: 2, supports: true } },
+  4014: { cutoutUrl: KT + "spice-rack-wall.svg", dimensionsCm: { w: 60, h: 28, d: 10 }, placement: { zone: "wall", layer: 1, elevationCm: 140 } },
+  4015: { cutoutUrl: KT + "track-lighting.svg", dimensionsCm: { w: 120, h: 28, d: 12 }, placement: { zone: "ceiling", layer: 1 } },
+  4016: { cutoutUrl: KT + "ceiling-light-smart.svg", dimensionsCm: { w: 60, h: 8, d: 60 }, placement: { zone: "ceiling", layer: 1 } },
+  4017: { cutoutUrl: KT + "kettle.svg", dimensionsCm: { w: 22, h: 25, d: 18 }, placement: { zone: "surface", layer: 2 } },
+  4018: { cutoutUrl: KT + "fruit-bowl.svg", dimensionsCm: { w: 32, h: 16, d: 32 }, placement: { zone: "surface", layer: 2 } },
+  4019: { cutoutUrl: KT + "herb-planter.svg", dimensionsCm: { w: 28, h: 30, d: 14 }, placement: { zone: "surface", layer: 2 } },
+  4020: { cutoutUrl: KT + "toaster.svg", dimensionsCm: { w: 30, h: 20, d: 20 }, placement: { zone: "surface", layer: 2 } },
+  4021: { cutoutUrl: KT + "wall-clock.svg", dimensionsCm: { w: 30, h: 30, d: 4 }, placement: { zone: "wall", layer: 1, elevationCm: 190 } },
+  4022: { cutoutUrl: KT + "rug-runner.svg", dimensionsCm: { w: 150, h: 2, d: 60 }, placement: { zone: "floor", layer: 0 } },
+});
+
+// Bathroom: PLACEHOLDER flat-illustration cutouts in /public/essentials/bathroom
+// (the round mirror, wall sconce, mirror strip light and plant reuse other art).
+// Vanity "supports" = the counter edge (the piece's top); hung vanities are wall pieces.
+const BA = "/essentials/bathroom/";
+Object.assign(previewData, {
+  3001: { cutoutUrl: BA + "vanity-single-sink.svg", dimensionsCm: { w: 80, h: 85, d: 50 }, placement: { zone: "floor", layer: 1, supports: true } },
+  3002: { cutoutUrl: BA + "vanity-wall-compact.svg", dimensionsCm: { w: 60, h: 45, d: 40 }, placement: { zone: "wall", layer: 1, elevationCm: 62, supports: true } },
+  3003: { cutoutUrl: BA + "mirror-led-backlit.svg", dimensionsCm: { w: 70, h: 90, d: 4 }, placement: { zone: "wall", layer: 1, elevationCm: 150 } },
+  3004: { cutoutUrl: LR + "wall-mirror-round.svg", dimensionsCm: { w: 60, h: 60, d: 3 }, placement: { zone: "wall", layer: 1, elevationCm: 150 } },
+  3005: { cutoutUrl: BA + "cabinet-storage.svg", dimensionsCm: { w: 60, h: 120, d: 30 }, placement: { zone: "floor", layer: 1 } },
+  3006: { cutoutUrl: BA + "shelf-corner.svg", dimensionsCm: { w: 35, h: 130, d: 35 }, placement: { zone: "floor", layer: 1 } },
+  3007: { cutoutUrl: LR + "wall-sconce.svg", dimensionsCm: { w: 16, h: 22, d: 12 }, placement: { zone: "wall", layer: 1, elevationCm: 180 } },
+  3008: { cutoutUrl: BA + "light-bar-vanity.svg", dimensionsCm: { w: 60, h: 8, d: 8 }, placement: { zone: "wall", layer: 1, elevationCm: 195 } },
+  3009: { cutoutUrl: BA + "vanity-double-sink.svg", dimensionsCm: { w: 150, h: 85, d: 55 }, placement: { zone: "floor", layer: 1, supports: true } },
+  3010: { cutoutUrl: BA + "vanity-floating.svg", dimensionsCm: { w: 90, h: 40, d: 45 }, placement: { zone: "wall", layer: 1, elevationCm: 65, supports: true } },
+  3011: { cutoutUrl: BA + "mirror-rect-framed.svg", dimensionsCm: { w: 60, h: 80, d: 3 }, placement: { zone: "wall", layer: 1, elevationCm: 150 } },
+  3012: { cutoutUrl: BA + "mirror-smart.svg", dimensionsCm: { w: 60, h: 80, d: 4 }, placement: { zone: "wall", layer: 1, elevationCm: 150 } },
+  3013: { cutoutUrl: BA + "cabinet-wall.svg", dimensionsCm: { w: 60, h: 60, d: 15 }, placement: { zone: "wall", layer: 1, elevationCm: 150 } },
+  3014: { cutoutUrl: BA + "tower-linen.svg", dimensionsCm: { w: 40, h: 160, d: 30 }, placement: { zone: "floor", layer: 1 } },
+  3015: { cutoutUrl: "/essentials/kitchen/led-strip.svg", dimensionsCm: { w: 60, h: 2.7, d: 3 }, placement: { zone: "wall", layer: 1, elevationCm: 200 } },
+  3016: { cutoutUrl: BA + "ceiling-exhaust.svg", dimensionsCm: { w: 35, h: 8, d: 35 }, placement: { zone: "ceiling", layer: 1 } },
+  3017: { cutoutUrl: BA + "soap-dispenser.svg", dimensionsCm: { w: 8, h: 18, d: 8 }, placement: { zone: "surface", layer: 2 } },
+  3018: { cutoutUrl: BA + "towel-stack.svg", dimensionsCm: { w: 28, h: 14, d: 22 }, placement: { zone: "surface", layer: 2 } },
+  3019: { cutoutUrl: LR + "decor-plant.svg", dimensionsCm: { w: 20, h: 30, d: 20 }, placement: { zone: "surface", layer: 2 } },
+  3020: { cutoutUrl: BA + "bath-mat.svg", dimensionsCm: { w: 60, h: 2, d: 40 }, placement: { zone: "floor", layer: 0 } },
+  3021: { cutoutUrl: BA + "towel-rail.svg", dimensionsCm: { w: 60, h: 20, d: 12 }, placement: { zone: "wall", layer: 1, elevationCm: 120 } },
+  3022: { cutoutUrl: BA + "laundry-basket.svg", dimensionsCm: { w: 40, h: 55, d: 30 }, placement: { zone: "floor", layer: 1 } },
+});
 
 const essentials = [
   // Living Room (1xxx)
@@ -188,6 +279,10 @@ const essentials = [
   { _id: eid(2014), name: "Rattan Bedside Table", price: 3799, vendorId: "5", categorySlugs: ["bedroom"], slot: "bedside-table", purchaseMode: "on-platform", images: [] },
   { _id: eid(2015), name: "Pendant Bedside Light", price: 2799, vendorId: "4", categorySlugs: ["bedroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
   { _id: eid(2016), name: "Smart Bedside Lamp", price: 3299, vendorId: "4", categorySlugs: ["bedroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2017), name: "Woven Bedroom Rug", price: 4299, vendorId: "5", categorySlugs: ["bedroom"], slot: "rug", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2018), name: "Framed Abstract Print", price: 2299, vendorId: "5", categorySlugs: ["bedroom"], slot: "wall-decor", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2019), name: "Arched Full-Length Mirror", price: 5499, vendorId: "3", categorySlugs: ["bedroom"], slot: "wall-decor", purchaseMode: "on-platform", images: [] },
+  { _id: eid(2020), name: "Potted Snake Plant", price: 999, vendorId: "5", categorySlugs: ["bedroom"], slot: "decor", purchaseMode: "on-platform", images: [] },
 
   // Bathroom (3xxx)
   { _id: eid(3001), name: "Single Sink Vanity Unit", price: 19999, vendorId: "3", categorySlugs: ["bathroom"], slot: "vanity", purchaseMode: "on-platform", images: [] },
@@ -206,6 +301,12 @@ const essentials = [
   { _id: eid(3014), name: "Tall Linen Tower", price: 6499, vendorId: "3", categorySlugs: ["bathroom"], slot: "storage", purchaseMode: "on-platform", images: [] },
   { _id: eid(3015), name: "LED Strip Mirror Light", price: 2699, vendorId: "4", categorySlugs: ["bathroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
   { _id: eid(3016), name: "Ceiling Exhaust Light Combo", price: 3299, vendorId: "4", categorySlugs: ["bathroom"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3017), name: "Pump Soap Dispenser", price: 599, vendorId: "3", categorySlugs: ["bathroom"], slot: "accessories", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3018), name: "Cotton Towel Set", price: 1499, vendorId: "5", categorySlugs: ["bathroom"], slot: "accessories", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3019), name: "Bathroom Plant", price: 699, vendorId: "5", categorySlugs: ["bathroom"], slot: "accessories", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3020), name: "Microfibre Bath Mat", price: 899, vendorId: "5", categorySlugs: ["bathroom"], slot: "rug", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3021), name: "Wall Towel Rail", price: 1799, vendorId: "3", categorySlugs: ["bathroom"], slot: "accessories", purchaseMode: "on-platform", images: [] },
+  { _id: eid(3022), name: "Wicker Laundry Basket", price: 2299, vendorId: "5", categorySlugs: ["bathroom"], slot: "storage", purchaseMode: "on-platform", images: [] },
 
   // Kitchen (4xxx)
   { _id: eid(4001), name: "4-Seater Dining Table", price: 21999, vendorId: "2", categorySlugs: ["kitchen"], slot: "dining-table", purchaseMode: "on-platform", images: [] },
@@ -224,6 +325,12 @@ const essentials = [
   { _id: eid(4014), name: "Wall-Mounted Spice Rack", price: 2999, vendorId: "2", categorySlugs: ["kitchen"], slot: "storage", purchaseMode: "on-platform", images: [] },
   { _id: eid(4015), name: "Track Lighting Kit", price: 5499, vendorId: "4", categorySlugs: ["kitchen"], slot: "lighting", purchaseMode: "on-platform", images: [] },
   { _id: eid(4016), name: "Smart Kitchen Ceiling Light", price: 4799, vendorId: "4", categorySlugs: ["kitchen"], slot: "lighting", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4017), name: "Stainless Steel Kettle", price: 1899, vendorId: "2", categorySlugs: ["kitchen"], slot: "countertop", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4018), name: "Ceramic Fruit Bowl", price: 1299, vendorId: "5", categorySlugs: ["kitchen"], slot: "countertop", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4019), name: "Herb Planter", price: 899, vendorId: "5", categorySlugs: ["kitchen"], slot: "countertop", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4020), name: "Two-Slice Toaster", price: 2199, vendorId: "4", categorySlugs: ["kitchen"], slot: "countertop", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4021), name: "Round Kitchen Wall Clock", price: 1499, vendorId: "5", categorySlugs: ["kitchen"], slot: "wall-decor", purchaseMode: "on-platform", images: [] },
+  { _id: eid(4022), name: "Kitchen Runner Rug", price: 2599, vendorId: "5", categorySlugs: ["kitchen"], slot: "rug", purchaseMode: "on-platform", images: [] },
 ];
 
 // Ten curated Rooms (bundles) per Category, each a different combination of
