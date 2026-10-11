@@ -16,6 +16,7 @@ import shiprocketWebhookRoutes from "./routes/shiprocketWebhookRoutes";
 import essentialCategoryRoutes from "./routes/essentialCategoryRoutes";
 import essentialOrderRoutes from "./routes/essentialOrderRoutes";
 import essentialRoutes from "./routes/essentialRoutes";
+import designRoutes from "./routes/designRoutes";
 import { requireAuth } from "./middleware/authMiddleware";
 import { Server } from "socket.io";
 import Message from "./models/messageModel";
@@ -75,13 +76,15 @@ app.use("/ai", requireAuth, aiChatRoutes);
 app.use("/orders", requireAuth, orderRoutes);
 app.use("/wishlist", requireAuth, wishlistRoutes);
 app.use("/webhooks/shiprocket", shiprocketWebhookRoutes);
-// /essentials/categories and /essentials/orders MUST both be mounted
+// /essentials/categories, /essentials/orders and /essentials/designs MUST all be mounted
 // before /essentials — otherwise those requests would be swallowed by
 // essentialRoutes' GET /:id (treating "categories"/"orders" as an
 // essential id) before ever reaching these routers, since Express tries
 // mounts in registration order.
 app.use("/essentials/categories", essentialCategoryRoutes);
 app.use("/essentials/orders", requireAuth, essentialOrderRoutes);
+// Shared Customize designs: public on purpose (no login) - validated and rate limited in the router.
+app.use("/essentials/designs", designRoutes);
 app.use("/essentials", essentialRoutes);
 
 app.use((req: Request, res: Response) => {
