@@ -139,7 +139,9 @@ router.post("/", async (req: Request, res: Response) => {
 
     const roomWidthCm = optionalNumber(body.roomWidthCm, 150, 1200);
     const roomHeightCm = optionalNumber(body.roomHeightCm, 200, 500);
-    if (roomWidthCm === undefined || roomHeightCm === undefined) {
+    // same limits as the frontend's depth field (MIN / MAX_ROOM_DEPTH_CM)
+    const roomDepthCm = optionalNumber(body.roomDepthCm, 150, 1200);
+    if (roomWidthCm === undefined || roomHeightCm === undefined || roomDepthCm === undefined) {
       return res.status(400).json({ message: "Invalid room size" });
     }
     const wallId = optionalToken(body.wallId);
@@ -176,6 +178,7 @@ router.post("/", async (req: Request, res: Response) => {
           positions: cleanPositions,
           roomWidthCm,
           roomHeightCm,
+          roomDepthCm,
           wallId,
           floorId,
         });
@@ -206,6 +209,7 @@ router.get("/:id", async (req: Request, res: Response) => {
       positions: design.positions ?? {},
       roomWidthCm: design.roomWidthCm ?? null,
       roomHeightCm: design.roomHeightCm ?? null,
+      roomDepthCm: design.roomDepthCm ?? null,
       wallId: design.wallId ?? null,
       floorId: design.floorId ?? null,
     });

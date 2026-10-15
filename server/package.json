@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "check:dimensions": "tsc && node dist/scripts/checkDimensions.js",
     "start": "concurrently \"npx tsc --watch\" \"nodemon dist/index.js\""
   },
   "author": "Mohammed Aseem",

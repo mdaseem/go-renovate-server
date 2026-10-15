@@ -36,6 +36,12 @@ const UserSchema = new Schema({
   address: AddressSchema,
   recentSearches: [RecentSearchSchema],
   wishlist: [String],
+  // What the account may do (see services/roles.ts). Accounts created before roles existed have no
+  // value and count as customers; admins are decided by the ADMIN_EMAILS env var, not stored here.
+  // Only the server ever sets these - never copy them from a request body.
+  role: { type: String, enum: ["customer", "vendor"], default: "customer" },
+  // The vendorDetails.id this account manages (set when an admin links them); null for everyone else.
+  vendorId: { type: String, default: null },
 });
 
 export const Users = mongoose.model("users", UserSchema);

@@ -30,9 +30,11 @@ interface MessageData {
 }
 
 dotenv.config();
-const { DB_USER, DB_PASS, DB_HOST, DB_NAME } = process.env;
+const { DB_USER, DB_PASS, DB_HOST, DB_NAME, MONGODB_URI } = process.env;
 mongoose
-  .connect(`mongodb+srv://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}`)
+  // MONGODB_URI is optional (used for local testing against a throwaway database); the normal
+  // setup keeps using the four DB_* variables.
+  .connect(MONGODB_URI || `mongodb+srv://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}`)
   .then(() => console.log(" Connected to MongoDB Atlas"))
   .catch((err) => console.error(" Connection error:", err));
 

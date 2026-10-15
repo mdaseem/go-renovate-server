@@ -35,9 +35,11 @@ const authMiddleware_1 = require("./middleware/authMiddleware");
 const socket_io_1 = require("socket.io");
 const messageModel_1 = __importDefault(require("./models/messageModel"));
 dotenv_1.default.config();
-const { DB_USER, DB_PASS, DB_HOST, DB_NAME } = process.env;
+const { DB_USER, DB_PASS, DB_HOST, DB_NAME, MONGODB_URI } = process.env;
 mongoose_1.default
-    .connect(`mongodb+srv://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}`)
+    // MONGODB_URI is optional (used for local testing against a throwaway database); the normal
+    // setup keeps using the four DB_* variables.
+    .connect(MONGODB_URI || `mongodb+srv://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}`)
     .then(() => console.log(" Connected to MongoDB Atlas"))
     .catch((err) => console.error(" Connection error:", err));
 mongoose_1.default.connection.on("open", () => {
