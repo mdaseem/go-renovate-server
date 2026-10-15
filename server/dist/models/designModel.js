@@ -21,6 +21,9 @@ const DesignSchema = new Schema({
     positions: { type: Schema.Types.Mixed, default: {} },
     roomWidthCm: { type: Number, default: null },
     roomHeightCm: { type: Number, default: null },
+    // How deep the room is for the 3D views (the flat room has no depth). null = the
+    // automatic depth; designs saved before this field existed read as null.
+    roomDepthCm: { type: Number, default: null },
     wallId: { type: String, default: null },
     floorId: { type: String, default: null },
     createdAt: { type: Date, default: Date.now, expires: 60 * 60 * 24 * 365 },

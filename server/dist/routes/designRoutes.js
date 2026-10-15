@@ -148,7 +148,9 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         const roomWidthCm = optionalNumber(body.roomWidthCm, 150, 1200);
         const roomHeightCm = optionalNumber(body.roomHeightCm, 200, 500);
-        if (roomWidthCm === undefined || roomHeightCm === undefined) {
+        // same limits as the frontend's depth field (MIN / MAX_ROOM_DEPTH_CM)
+        const roomDepthCm = optionalNumber(body.roomDepthCm, 150, 1200);
+        if (roomWidthCm === undefined || roomHeightCm === undefined || roomDepthCm === undefined) {
             return res.status(400).json({ message: "Invalid room size" });
         }
         const wallId = optionalToken(body.wallId);
@@ -184,6 +186,7 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                     positions: cleanPositions,
                     roomWidthCm,
                     roomHeightCm,
+                    roomDepthCm,
                     wallId,
                     floorId,
                 });
@@ -203,7 +206,7 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 }));
 router.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _c, _d, _e, _f, _g, _h;
+    var _c, _d, _e, _f, _g, _h, _j;
     try {
         const { id } = req.params;
         if (!SHORT_ID.test(id))
@@ -219,8 +222,9 @@ router.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             positions: (_d = design.positions) !== null && _d !== void 0 ? _d : {},
             roomWidthCm: (_e = design.roomWidthCm) !== null && _e !== void 0 ? _e : null,
             roomHeightCm: (_f = design.roomHeightCm) !== null && _f !== void 0 ? _f : null,
-            wallId: (_g = design.wallId) !== null && _g !== void 0 ? _g : null,
-            floorId: (_h = design.floorId) !== null && _h !== void 0 ? _h : null,
+            roomDepthCm: (_g = design.roomDepthCm) !== null && _g !== void 0 ? _g : null,
+            wallId: (_h = design.wallId) !== null && _h !== void 0 ? _h : null,
+            floorId: (_j = design.floorId) !== null && _j !== void 0 ? _j : null,
         });
     }
     catch (error) {
