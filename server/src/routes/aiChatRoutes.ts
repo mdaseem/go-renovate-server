@@ -1,7 +1,9 @@
 import express, { Request, Response, Router } from "express";
 import Groq from "groq-sdk";
 import { VendorDetails } from "../models/vendorDetailModel";
-import { PUBLIC_VENDOR_FILTER } from "../services/vendorVisibility";
+import { publicVendorQuery } from "../services/vendorVisibility";
+import { servicesEnabled } from "../services/featureFlags";
+import { presentVendors, vendorIdsMatchingProducts } from "../services/shopCatalogue";
 import { safeContainsFilter } from "../services/textSafety";
 import { Products } from "../models/productModel";
 
@@ -19,11 +21,23 @@ function getModel(): string {
   return process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 }
 
-const SYSTEM_PROMPT =
+const SERVICES_PROMPT =
   "You are the Go Renovate assistant, embedded in a home-renovation marketplace app. " +
   "Help users find renovation vendors, compare services, and understand pricing using the tools available to you. " +
   "Only answer from tool results — do not invent vendors, services, or prices. " +
   "Keep responses concise and focused on what the user asked.";
+
+// Shop mode (services switched off): vendors sell products, not services.
+const SHOP_PROMPT =
+  "You are the Go Renovate assistant, embedded in a home furnishing marketplace app where vendors sell products " +
+  "(furniture, lighting, rugs, decor). Help users find vendors and compare their products and prices using the tools " +
+  "available to you. The app does not offer renovation services right now, so do not suggest booking any. " +
+  "Only answer from tool results — do not invent vendors, products, or prices. " +
+  "Keep responses concise and focused on what the user asked.";
+
+function systemPrompt(): string {
+  return servicesEnabled() ? SERVICES_PROMPT : SHOP_PROMPT;
+}
 
 interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
@@ -111,23 +125,29 @@ async function runSearchVendors(input: {
   location?: string;
   category?: string;
 }): Promise<string> {
-  const filter: Record<string, unknown> = { ...PUBLIC_VENDOR_FILTER };
+  const extra: Record<string, unknown> = {};
   // The model supplies these strings, so they are treated as untrusted text: escaped, length-capped,
   // and matched literally (never as a regex).
   const query = safeContainsFilter(input.query);
   if (query) {
-    filter.$or = [{ name: query }, { tagline: query }];
+    extra.$or = [{ name: query }, { tagline: query }];
   }
   const location = safeContainsFilter(input.location);
   if (location) {
-    filter.location = location;
+    extra.location = location;
   }
   const category = safeContainsFilter(input.category);
   if (category) {
-    filter["categories.label"] = category;
+    if (servicesEnabled()) {
+      extra["categories.label"] = category;
+    } else {
+      // Shop mode: "category" matches a product's name or type (Sofa, Lighting...).
+      extra.id = { $in: await vendorIdsMatchingProducts(new RegExp(category.$regex, "i")) };
+    }
   }
 
-  const vendors = await VendorDetails.find(filter).limit(10);
+  const found = await VendorDetails.find(await publicVendorQuery(extra), { ownerUserId: 0 }).limit(10);
+  const vendors = await presentVendors(found);
   return JSON.stringify(
     vendors.map((v: any) => ({
       id: v.id,
@@ -146,9 +166,28 @@ async function runSearchVendors(input: {
 async function runGetVendorServices(input: {
   vendorId: string;
 }): Promise<string> {
-  const vendor: any = await VendorDetails.findOne({ id: String(input.vendorId), ...PUBLIC_VENDOR_FILTER });
-  if (!vendor) {
+  const found = await VendorDetails.findOne(
+    await publicVendorQuery({ id: String(input.vendorId) }),
+    { ownerUserId: 0 },
+  );
+  if (!found) {
     return JSON.stringify({ error: "Vendor not found" });
+  }
+  const [vendor] = (await presentVendors([found])) as any[];
+  if (!servicesEnabled()) {
+    return JSON.stringify({
+      id: vendor.id,
+      name: vendor.name,
+      categories: vendor.categories?.map((c: any) => ({
+        label: c.label,
+        products: c.services?.map((p: any) => ({
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          inStock: p.isAvailable,
+        })),
+      })),
+    });
   }
   return JSON.stringify({
     id: vendor.id,
@@ -211,7 +250,7 @@ router.post("/chat", async (req: Request, res: Response) => {
   }
 
   const conversation: ChatMessage[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemPrompt() },
     ...messages,
   ];
 

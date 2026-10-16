@@ -18,6 +18,8 @@ const essentialOrderModel_1 = require("../models/essentialOrderModel");
 const essentialModel_1 = require("../models/essentialModel");
 const vendorNameLookup_1 = require("../services/vendorNameLookup");
 const orderModel_1 = require("../models/orderModel");
+const vendorDetailModel_1 = require("../models/vendorDetailModel");
+const vendorVisibility_1 = require("../services/vendorVisibility");
 const router = express_1.default.Router();
 // requireAuth sets req.user = decoded, and the token is signed as
 // { name: userFound } (a pre-existing quirk of authorizeUser.ts, matching
@@ -119,6 +121,24 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         // body, so a tampered client payload can't under-price an order.
         const essentials = yield essentialModel_1.Essentials.find({ _id: { $in: requestedIds } });
         const essentialById = new Map(essentials.map((essential) => [essential._id.toString(), essential]));
+        // Only on-platform items can be bought here (external-store items are bought on the vendor's own
+        // site), and a pending or paused vendor cannot take new orders. The pages hide both, but the API
+        // is what actually enforces it.
+        const vendorIdsInOrder = Array.from(new Set(essentials.map((essential) => essential.get("vendorId"))));
+        const blockedVendors = yield vendorDetailModel_1.VendorDetails.find({ id: { $in: vendorIdsInOrder }, status: { $in: vendorVisibility_1.NOT_PUBLIC_STATUSES } }, { id: 1 });
+        const blockedVendorIds = new Set(blockedVendors.map((vendor) => vendor.get("id")));
+        for (const essential of essentials) {
+            if (essential.get("purchaseMode") === "external-store") {
+                return res.status(400).json({
+                    message: `${essential.get("name")} is sold on the vendor's own store, not here`,
+                });
+            }
+            if (blockedVendorIds.has(essential.get("vendorId"))) {
+                return res.status(400).json({
+                    message: `${essential.get("name")} is not available right now`,
+                });
+            }
+        }
         const vendorGroups = new Map();
         for (const item of items) {
             const essentialId = item.essentialId;

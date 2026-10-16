@@ -16,6 +16,8 @@ const express_1 = __importDefault(require("express"));
 const groq_sdk_1 = __importDefault(require("groq-sdk"));
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
 const vendorVisibility_1 = require("../services/vendorVisibility");
+const featureFlags_1 = require("../services/featureFlags");
+const shopCatalogue_1 = require("../services/shopCatalogue");
 const textSafety_1 = require("../services/textSafety");
 const productModel_1 = require("../models/productModel");
 const router = express_1.default.Router();
@@ -29,10 +31,19 @@ function getClient() {
 function getModel() {
     return process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 }
-const SYSTEM_PROMPT = "You are the Go Renovate assistant, embedded in a home-renovation marketplace app. " +
+const SERVICES_PROMPT = "You are the Go Renovate assistant, embedded in a home-renovation marketplace app. " +
     "Help users find renovation vendors, compare services, and understand pricing using the tools available to you. " +
     "Only answer from tool results — do not invent vendors, services, or prices. " +
     "Keep responses concise and focused on what the user asked.";
+// Shop mode (services switched off): vendors sell products, not services.
+const SHOP_PROMPT = "You are the Go Renovate assistant, embedded in a home furnishing marketplace app where vendors sell products " +
+    "(furniture, lighting, rugs, decor). Help users find vendors and compare their products and prices using the tools " +
+    "available to you. The app does not offer renovation services right now, so do not suggest booking any. " +
+    "Only answer from tool results — do not invent vendors, products, or prices. " +
+    "Keep responses concise and focused on what the user asked.";
+function systemPrompt() {
+    return (0, featureFlags_1.servicesEnabled)() ? SERVICES_PROMPT : SHOP_PROMPT;
+}
 const TOOL_DEFINITIONS = [
     {
         type: "function",
@@ -100,22 +111,29 @@ const TOOL_DEFINITIONS = [
 ];
 function runSearchVendors(input) {
     return __awaiter(this, void 0, void 0, function* () {
-        const filter = Object.assign({}, vendorVisibility_1.PUBLIC_VENDOR_FILTER);
+        const extra = {};
         // The model supplies these strings, so they are treated as untrusted text: escaped, length-capped,
         // and matched literally (never as a regex).
         const query = (0, textSafety_1.safeContainsFilter)(input.query);
         if (query) {
-            filter.$or = [{ name: query }, { tagline: query }];
+            extra.$or = [{ name: query }, { tagline: query }];
         }
         const location = (0, textSafety_1.safeContainsFilter)(input.location);
         if (location) {
-            filter.location = location;
+            extra.location = location;
         }
         const category = (0, textSafety_1.safeContainsFilter)(input.category);
         if (category) {
-            filter["categories.label"] = category;
+            if ((0, featureFlags_1.servicesEnabled)()) {
+                extra["categories.label"] = category;
+            }
+            else {
+                // Shop mode: "category" matches a product's name or type (Sofa, Lighting...).
+                extra.id = { $in: yield (0, shopCatalogue_1.vendorIdsMatchingProducts)(new RegExp(category.$regex, "i")) };
+            }
         }
-        const vendors = yield vendorDetailModel_1.VendorDetails.find(filter).limit(10);
+        const found = yield vendorDetailModel_1.VendorDetails.find(yield (0, vendorVisibility_1.publicVendorQuery)(extra), { ownerUserId: 0 }).limit(10);
+        const vendors = yield (0, shopCatalogue_1.presentVendors)(found);
         return JSON.stringify(vendors.map((v) => {
             var _a;
             return ({
@@ -133,16 +151,35 @@ function runSearchVendors(input) {
     });
 }
 function runGetVendorServices(input) {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
-        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(Object.assign({ id: String(input.vendorId) }, vendorVisibility_1.PUBLIC_VENDOR_FILTER));
-        if (!vendor) {
+        const found = yield vendorDetailModel_1.VendorDetails.findOne(yield (0, vendorVisibility_1.publicVendorQuery)({ id: String(input.vendorId) }), { ownerUserId: 0 });
+        if (!found) {
             return JSON.stringify({ error: "Vendor not found" });
+        }
+        const [vendor] = (yield (0, shopCatalogue_1.presentVendors)([found]));
+        if (!(0, featureFlags_1.servicesEnabled)()) {
+            return JSON.stringify({
+                id: vendor.id,
+                name: vendor.name,
+                categories: (_a = vendor.categories) === null || _a === void 0 ? void 0 : _a.map((c) => {
+                    var _a;
+                    return ({
+                        label: c.label,
+                        products: (_a = c.services) === null || _a === void 0 ? void 0 : _a.map((p) => ({
+                            name: p.name,
+                            description: p.description,
+                            price: p.price,
+                            inStock: p.isAvailable,
+                        })),
+                    });
+                }),
+            });
         }
         return JSON.stringify({
             id: vendor.id,
             name: vendor.name,
-            categories: (_a = vendor.categories) === null || _a === void 0 ? void 0 : _a.map((c) => {
+            categories: (_b = vendor.categories) === null || _b === void 0 ? void 0 : _b.map((c) => {
                 var _a;
                 return ({
                     label: c.label,
@@ -195,7 +232,7 @@ router.post("/chat", (req, res) => __awaiter(void 0, void 0, void 0, function* (
         return res.status(400).json({ error: "messages array is required" });
     }
     const conversation = [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt() },
         ...messages,
     ];
     try {

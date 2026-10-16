@@ -1,7 +1,13 @@
 import express, { Request, Response, Router } from "express";
 import { FilterQuery } from "mongoose";
 import { VendorDetails } from "../models/vendorDetailModel";
-import { PUBLIC_VENDOR_FILTER } from "../services/vendorVisibility";
+import { getPublicVendorFilter, publicVendorQuery } from "../services/vendorVisibility";
+import { servicesEnabled } from "../services/featureFlags";
+import {
+  presentVendors,
+  vendorIdsMatchingProducts,
+  vendorIdsWithSlots,
+} from "../services/shopCatalogue";
 import { escapeRegExp } from "../services/textSafety";
 
 const router: Router = express.Router();
@@ -24,14 +30,22 @@ function relevanceScore(vendor: { name?: string }, term: string): number {
   return 0;
 }
 
+// In shop mode (the default) `categories` in every response below are the vendor's product
+// categories and their `services` are products - see services/shopCatalogue.ts.
 router.get("/", async (req: Request, res: Response) => {
   try {
     const { category, location, rating, verified, search, limit } = req.query;
-    const filter: FilterQuery<typeof VendorDetails> = { ...PUBLIC_VENDOR_FILTER };
+    const shopMode = !servicesEnabled();
+    const filter: FilterQuery<typeof VendorDetails> = { ...(await getPublicVendorFilter()) };
+    const andConditions: FilterQuery<typeof VendorDetails>[] = [];
 
     const categoryIds = parseMultiValue(category);
     if (categoryIds) {
-      filter["categories.id"] = { $in: categoryIds };
+      if (shopMode) {
+        andConditions.push({ id: { $in: await vendorIdsWithSlots(categoryIds) } });
+      } else {
+        filter["categories.id"] = { $in: categoryIds };
+      }
     }
 
     const locations = parseMultiValue(location);
@@ -54,13 +68,21 @@ router.get("/", async (req: Request, res: Response) => {
       typeof search === "string" ? search.trim().slice(0, MAX_SEARCH_LENGTH) : "";
     if (searchTerm) {
       const pattern = new RegExp(escapeRegExp(searchTerm), "i");
-      filter.$or = [
+      const matches: FilterQuery<typeof VendorDetails>[] = [
         { name: pattern },
         { tagline: pattern },
         { location: pattern },
-        { "categories.label": pattern },
-        { "categories.services.name": pattern },
       ];
+      if (shopMode) {
+        matches.push({ id: { $in: await vendorIdsMatchingProducts(pattern) } });
+      } else {
+        matches.push({ "categories.label": pattern }, { "categories.services.name": pattern });
+      }
+      filter.$or = matches;
+    }
+
+    if (andConditions.length > 0) {
+      filter.$and = andConditions;
     }
 
     let vendors = await VendorDetails.find(filter, PUBLIC_PROJECTION);
@@ -81,7 +103,7 @@ router.get("/", async (req: Request, res: Response) => {
       vendors = vendors.slice(0, limitNum);
     }
 
-    return res.json(vendors);
+    return res.json(await presentVendors(vendors));
   } catch (error) {
     console.error("Failed to fetch vendors:", error);
     return res.status(500).json({ message: "Failed to fetch vendors" });
@@ -107,7 +129,7 @@ router.get("/:id/services/availability", async (req: Request, res: Response) => 
       });
     }
 
-    const vendor = await VendorDetails.findOne({ id, ...PUBLIC_VENDOR_FILTER }, { categories: 1 });
+    const vendor = await VendorDetails.findOne(await publicVendorQuery({ id }), { categories: 1 });
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }
@@ -145,13 +167,14 @@ router.get("/:id/services/availability", async (req: Request, res: Response) => 
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const vendor = await VendorDetails.findOne({ id, ...PUBLIC_VENDOR_FILTER }, PUBLIC_PROJECTION);
+    const vendor = await VendorDetails.findOne(await publicVendorQuery({ id }), PUBLIC_PROJECTION);
 
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }
 
-    return res.json(vendor);
+    const [presented] = await presentVendors([vendor]);
+    return res.json(presented);
   } catch (error) {
     console.error("Failed to fetch vendor detail:", error);
     return res.status(500).json({ message: "Failed to fetch vendor detail" });

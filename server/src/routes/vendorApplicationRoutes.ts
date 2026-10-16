@@ -5,6 +5,7 @@ import { CurrentUser, loadCurrentUser, requireRole } from "../middleware/require
 import { SELLS_OPTIONS, VendorApplications } from "../models/vendorApplicationModel";
 import { VendorDetails } from "../models/vendorDetailModel";
 import { Users } from "../models/userModels";
+import { servicesEnabled } from "../services/featureFlags";
 
 // "Sell on Go Renovate": a signed-in customer applies, an admin approves or rejects.
 // Approving creates a NEW vendor profile (never a seeded one) and makes the applicant a vendor.
@@ -36,7 +37,8 @@ function validateApplication(body: Record<string, unknown>) {
   if (!businessName) errors.businessName = "Enter your business name (2 to 80 characters).";
   const city = text(body.city, 2, 60);
   if (!city) errors.city = "Enter the city you work from.";
-  const sells = typeof body.sells === "string" ? body.sells : "";
+  // While services are switched off the form no longer asks what is sold: every applicant sells products.
+  const sells = typeof body.sells === "string" && body.sells ? body.sells : servicesEnabled() ? "" : "products";
   if (!(SELLS_OPTIONS as readonly string[]).includes(sells)) {
     errors.sells = "Choose whether you offer services, products or both.";
   }
