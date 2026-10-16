@@ -1,6 +1,7 @@
 import express, { Request, Response, Router } from "express";
 import { Users } from "../models/userModels";
 import { VendorDetails } from "../models/vendorDetailModel";
+import { PUBLIC_VENDOR_FILTER } from "../services/vendorVisibility";
 
 const router: Router = express.Router();
 
@@ -28,7 +29,7 @@ function requireAuthedUserId(
 // results are re-sorted to match wishlist order — most recently added
 // (last pushed by $addToSet) shown first.
 async function hydrateWishlist(wishlist: string[]) {
-  const vendors = await VendorDetails.find({ id: { $in: wishlist } });
+  const vendors = await VendorDetails.find({ id: { $in: wishlist }, ...PUBLIC_VENDOR_FILTER }, { ownerUserId: 0 });
   const order = new Map(wishlist.map((id, index) => [id, index]));
   return vendors.sort(
     (a, b) =>
@@ -66,7 +67,7 @@ router.post("/", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "vendorId is required" });
     }
 
-    const vendor = await VendorDetails.findOne({ id: vendorId });
+    const vendor = await VendorDetails.findOne({ id: vendorId, ...PUBLIC_VENDOR_FILTER });
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }

@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { Orders, OrderStatus, ORDER_STATUS_TRANSITIONS } from "../models/orderModel";
 import { Users } from "../models/userModels";
 import { VendorDetails } from "../models/vendorDetailModel";
+import { PUBLIC_VENDOR_FILTER } from "../services/vendorVisibility";
 import {
   createAdhocOrder,
   ShiprocketNotConfiguredError,
@@ -127,7 +128,8 @@ router.post("/", async (req: Request, res: Response) => {
       return res.status(400).json(addressError);
     }
 
-    const vendor = await VendorDetails.findOne({ id: vendorId });
+    // Pending or paused vendors cannot take new orders.
+    const vendor = await VendorDetails.findOne({ id: vendorId, ...PUBLIC_VENDOR_FILTER });
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }

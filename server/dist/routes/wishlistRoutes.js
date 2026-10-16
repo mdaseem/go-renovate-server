@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const userModels_1 = require("../models/userModels");
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
+const vendorVisibility_1 = require("../services/vendorVisibility");
 const router = express_1.default.Router();
 // requireAuth sets req.user = decoded, and the token is signed as
 // { name: userFound } (see authorizeUser.ts / orderRoutes.ts), so the
@@ -37,7 +38,7 @@ function requireAuthedUserId(req, res) {
 // (last pushed by $addToSet) shown first.
 function hydrateWishlist(wishlist) {
     return __awaiter(this, void 0, void 0, function* () {
-        const vendors = yield vendorDetailModel_1.VendorDetails.find({ id: { $in: wishlist } });
+        const vendors = yield vendorDetailModel_1.VendorDetails.find(Object.assign({ id: { $in: wishlist } }, vendorVisibility_1.PUBLIC_VENDOR_FILTER), { ownerUserId: 0 });
         const order = new Map(wishlist.map((id, index) => [id, index]));
         return vendors.sort((a, b) => {
             var _a, _b;
@@ -73,7 +74,7 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!vendorId) {
             return res.status(400).json({ message: "vendorId is required" });
         }
-        const vendor = yield vendorDetailModel_1.VendorDetails.findOne({ id: vendorId });
+        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(Object.assign({ id: vendorId }, vendorVisibility_1.PUBLIC_VENDOR_FILTER));
         if (!vendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }

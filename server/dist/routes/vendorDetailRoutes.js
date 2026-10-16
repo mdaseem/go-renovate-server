@@ -14,20 +14,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
+const vendorVisibility_1 = require("../services/vendorVisibility");
+const textSafety_1 = require("../services/textSafety");
 const router = express_1.default.Router();
 const MAX_SEARCH_LENGTH = 100;
 const MAX_AVAILABILITY_IDS = 50;
+// Internal fields that the public pages never need (the owner is a user account id).
+const PUBLIC_PROJECTION = { ownerUserId: 0 };
 function parseMultiValue(value) {
     if (typeof value !== "string" || value.length === 0)
         return undefined;
     const values = value.split("|").filter(Boolean);
     return values.length > 0 ? values : undefined;
-}
-// Escapes regex metacharacters in free-text search input before it's used
-// to build a RegExp, so a query like "A/C (window)" can't throw or be
-// (ab)used to build an unintended pattern.
-function escapeRegExp(value) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 function relevanceScore(vendor, term) {
     const name = (vendor.name || "").toLowerCase();
@@ -42,7 +40,7 @@ function relevanceScore(vendor, term) {
 router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { category, location, rating, verified, search, limit } = req.query;
-        const filter = {};
+        const filter = Object.assign({}, vendorVisibility_1.PUBLIC_VENDOR_FILTER);
         const categoryIds = parseMultiValue(category);
         if (categoryIds) {
             filter["categories.id"] = { $in: categoryIds };
@@ -62,7 +60,7 @@ router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         const searchTerm = typeof search === "string" ? search.trim().slice(0, MAX_SEARCH_LENGTH) : "";
         if (searchTerm) {
-            const pattern = new RegExp(escapeRegExp(searchTerm), "i");
+            const pattern = new RegExp((0, textSafety_1.escapeRegExp)(searchTerm), "i");
             filter.$or = [
                 { name: pattern },
                 { tagline: pattern },
@@ -71,7 +69,7 @@ router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 { "categories.services.name": pattern },
             ];
         }
-        let vendors = yield vendorDetailModel_1.VendorDetails.find(filter);
+        let vendors = yield vendorDetailModel_1.VendorDetails.find(filter, PUBLIC_PROJECTION);
         if (searchTerm) {
             const lowerTerm = searchTerm.toLowerCase();
             vendors = vendors
@@ -105,7 +103,7 @@ router.get("/:id/services/availability", (req, res) => __awaiter(void 0, void 0,
                 message: `At most ${MAX_AVAILABILITY_IDS} ids can be checked at once`,
             });
         }
-        const vendor = yield vendorDetailModel_1.VendorDetails.findOne({ id }, { categories: 1 });
+        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(Object.assign({ id }, vendorVisibility_1.PUBLIC_VENDOR_FILTER), { categories: 1 });
         if (!vendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }
@@ -137,7 +135,7 @@ router.get("/:id/services/availability", (req, res) => __awaiter(void 0, void 0,
 router.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const vendor = yield vendorDetailModel_1.VendorDetails.findOne({ id });
+        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(Object.assign({ id }, vendorVisibility_1.PUBLIC_VENDOR_FILTER), PUBLIC_PROJECTION);
         if (!vendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }

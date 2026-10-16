@@ -1,6 +1,8 @@
 import express, { Request, Response, Router } from "express";
 import Groq from "groq-sdk";
 import { VendorDetails } from "../models/vendorDetailModel";
+import { PUBLIC_VENDOR_FILTER } from "../services/vendorVisibility";
+import { safeContainsFilter } from "../services/textSafety";
 import { Products } from "../models/productModel";
 
 const router: Router = express.Router();
@@ -109,18 +111,20 @@ async function runSearchVendors(input: {
   location?: string;
   category?: string;
 }): Promise<string> {
-  const filter: Record<string, unknown> = {};
-  if (input.query) {
-    filter.$or = [
-      { name: { $regex: input.query, $options: "i" } },
-      { tagline: { $regex: input.query, $options: "i" } },
-    ];
+  const filter: Record<string, unknown> = { ...PUBLIC_VENDOR_FILTER };
+  // The model supplies these strings, so they are treated as untrusted text: escaped, length-capped,
+  // and matched literally (never as a regex).
+  const query = safeContainsFilter(input.query);
+  if (query) {
+    filter.$or = [{ name: query }, { tagline: query }];
   }
-  if (input.location) {
-    filter.location = { $regex: input.location, $options: "i" };
+  const location = safeContainsFilter(input.location);
+  if (location) {
+    filter.location = location;
   }
-  if (input.category) {
-    filter["categories.label"] = { $regex: input.category, $options: "i" };
+  const category = safeContainsFilter(input.category);
+  if (category) {
+    filter["categories.label"] = category;
   }
 
   const vendors = await VendorDetails.find(filter).limit(10);
@@ -142,7 +146,7 @@ async function runSearchVendors(input: {
 async function runGetVendorServices(input: {
   vendorId: string;
 }): Promise<string> {
-  const vendor: any = await VendorDetails.findOne({ id: input.vendorId });
+  const vendor: any = await VendorDetails.findOne({ id: String(input.vendorId), ...PUBLIC_VENDOR_FILTER });
   if (!vendor) {
     return JSON.stringify({ error: "Vendor not found" });
   }
@@ -168,8 +172,9 @@ async function runSearchProducts(input: {
   maxPrice?: number;
 }): Promise<string> {
   const filter: Record<string, unknown> = {};
-  if (input.query) {
-    filter.description = { $regex: input.query, $options: "i" };
+  const query = safeContainsFilter(input.query);
+  if (query) {
+    filter.description = query;
   }
   if (typeof input.maxPrice === "number") {
     filter.discountPrice = { $lte: input.maxPrice };
