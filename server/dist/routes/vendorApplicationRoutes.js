@@ -19,6 +19,7 @@ const requireRole_1 = require("../middleware/requireRole");
 const vendorApplicationModel_1 = require("../models/vendorApplicationModel");
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
 const userModels_1 = require("../models/userModels");
+const featureFlags_1 = require("../services/featureFlags");
 // "Sell on Go Renovate": a signed-in customer applies, an admin approves or rejects.
 // Approving creates a NEW vendor profile (never a seeded one) and makes the applicant a vendor.
 // The role and vendorId are only ever set here, by the server, never copied from a request body.
@@ -49,7 +50,8 @@ function validateApplication(body) {
     const city = text(body.city, 2, 60);
     if (!city)
         errors.city = "Enter the city you work from.";
-    const sells = typeof body.sells === "string" ? body.sells : "";
+    // While services are switched off the form no longer asks what is sold: every applicant sells products.
+    const sells = typeof body.sells === "string" && body.sells ? body.sells : (0, featureFlags_1.servicesEnabled)() ? "" : "products";
     if (!vendorApplicationModel_1.SELLS_OPTIONS.includes(sells)) {
         errors.sells = "Choose whether you offer services, products or both.";
     }

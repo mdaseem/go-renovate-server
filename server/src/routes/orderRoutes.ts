@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 import { Orders, OrderStatus, ORDER_STATUS_TRANSITIONS } from "../models/orderModel";
 import { Users } from "../models/userModels";
 import { VendorDetails } from "../models/vendorDetailModel";
-import { PUBLIC_VENDOR_FILTER } from "../services/vendorVisibility";
+import { publicVendorQuery } from "../services/vendorVisibility";
+import { servicesEnabled } from "../services/featureFlags";
 import {
   createAdhocOrder,
   ShiprocketNotConfiguredError,
@@ -105,6 +106,11 @@ router.post("/", async (req: Request, res: Response) => {
     if (!userEmail) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    // Hiding the service pages is not enough: the endpoint itself refuses new service bookings
+    // while the services switch is off (products are ordered through /essentials/orders).
+    if (!servicesEnabled()) {
+      return res.status(403).json({ message: "Service bookings are not available right now" });
+    }
 
     const { vendorId, items, address } = req.body as {
       vendorId?: unknown;
@@ -129,7 +135,7 @@ router.post("/", async (req: Request, res: Response) => {
     }
 
     // Pending or paused vendors cannot take new orders.
-    const vendor = await VendorDetails.findOne({ id: vendorId, ...PUBLIC_VENDOR_FILTER });
+    const vendor = await VendorDetails.findOne(await publicVendorQuery({ id: vendorId }));
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }

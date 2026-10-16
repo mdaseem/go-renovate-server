@@ -16,6 +16,7 @@ const express_1 = __importDefault(require("express"));
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const requireRole_1 = require("../middleware/requireRole");
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
+const shopCatalogue_1 = require("../services/shopCatalogue");
 // Routes for a signed-in vendor about their own business. Every route here is vendor-only and
 // reads the vendorId from the database (via requireRole), never from the request.
 const router = express_1.default.Router();
@@ -26,7 +27,9 @@ router.get("/me", authMiddleware_1.requireAuth, (0, requireRole_1.requireRole)("
         if (!vendor) {
             return res.status(404).json({ message: "We could not find your vendor profile." });
         }
-        return res.json(vendor);
+        // In shop mode the "services" a vendor sees are their products, same as on the public pages.
+        const [presented] = yield (0, shopCatalogue_1.presentVendors)([vendor]);
+        return res.json(presented);
     }
     catch (error) {
         console.error("Failed to load vendor profile:", error);

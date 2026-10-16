@@ -4,6 +4,8 @@ import { EssentialOrders } from "../models/essentialOrderModel";
 import { Essentials } from "../models/essentialModel";
 import { getVendorNameMap } from "../services/vendorNameLookup";
 import { OrderStatus, ORDER_STATUS_STEPS } from "../models/orderModel";
+import { VendorDetails } from "../models/vendorDetailModel";
+import { NOT_PUBLIC_STATUSES } from "../services/vendorVisibility";
 
 const router: Router = express.Router();
 
@@ -152,6 +154,30 @@ router.post("/", async (req: Request, res: Response) => {
     const essentialById = new Map(
       essentials.map((essential) => [essential._id.toString(), essential]),
     );
+
+    // Only on-platform items can be bought here (external-store items are bought on the vendor's own
+    // site), and a pending or paused vendor cannot take new orders. The pages hide both, but the API
+    // is what actually enforces it.
+    const vendorIdsInOrder = Array.from(
+      new Set(essentials.map((essential) => essential.get("vendorId") as string)),
+    );
+    const blockedVendors = await VendorDetails.find(
+      { id: { $in: vendorIdsInOrder }, status: { $in: NOT_PUBLIC_STATUSES } },
+      { id: 1 },
+    );
+    const blockedVendorIds = new Set(blockedVendors.map((vendor) => vendor.get("id") as string));
+    for (const essential of essentials) {
+      if (essential.get("purchaseMode") === "external-store") {
+        return res.status(400).json({
+          message: `${essential.get("name")} is sold on the vendor's own store, not here`,
+        });
+      }
+      if (blockedVendorIds.has(essential.get("vendorId") as string)) {
+        return res.status(400).json({
+          message: `${essential.get("name")} is not available right now`,
+        });
+      }
+    }
 
     interface VendorGroup {
       items: {

@@ -1,9 +1,31 @@
 import { FilterQuery } from "mongoose";
+import { Essentials } from "../models/essentialModel";
+import { servicesEnabled } from "./featureFlags";
 
-// What the public /vendors pages may show: profiles that are not pending or paused (a missing status
-// means active, which keeps every profile created before sign-up existed visible), and that have at
-// least one service listed - a seller of products only has nothing to show on the services pages.
+// A profile that is pending or paused is never public and cannot take orders. A missing status means
+// active, which keeps every profile created before sign-up existed visible.
+export const NOT_PUBLIC_STATUSES = ["pending", "paused"];
+
+// Services mode (SERVICES_ENABLED=true): a vendor is public once it has at least one service listed.
 export const PUBLIC_VENDOR_FILTER: FilterQuery<unknown> = {
-  status: { $nin: ["pending", "paused"] },
+  status: { $nin: NOT_PUBLIC_STATUSES },
   "categories.0": { $exists: true },
 };
+
+// Shop mode (the default): a vendor is public once it has at least one product.
+async function shopVendorFilter(): Promise<FilterQuery<unknown>> {
+  const vendorIds: string[] = await Essentials.distinct("vendorId");
+  return { status: { $nin: NOT_PUBLIC_STATUSES }, id: { $in: vendorIds } };
+}
+
+export async function getPublicVendorFilter(): Promise<FilterQuery<unknown>> {
+  return servicesEnabled() ? PUBLIC_VENDOR_FILTER : shopVendorFilter();
+}
+
+// Always combine with $and: the shop filter constrains `id`, so spreading it next to `{ id }` would
+// silently replace the id being looked up.
+export async function publicVendorQuery(
+  extra: FilterQuery<unknown> = {},
+): Promise<FilterQuery<unknown>> {
+  return { $and: [extra, await getPublicVendorFilter()] };
+}

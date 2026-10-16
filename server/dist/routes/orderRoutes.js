@@ -18,6 +18,7 @@ const orderModel_1 = require("../models/orderModel");
 const userModels_1 = require("../models/userModels");
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
 const vendorVisibility_1 = require("../services/vendorVisibility");
+const featureFlags_1 = require("../services/featureFlags");
 const shiprocketService_1 = require("../services/shiprocketService");
 const router = express_1.default.Router();
 // requireAuth sets req.user = decoded, and the token is signed as
@@ -84,6 +85,11 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!userEmail) {
             return res.status(401).json({ message: "Unauthorized" });
         }
+        // Hiding the service pages is not enough: the endpoint itself refuses new service bookings
+        // while the services switch is off (products are ordered through /essentials/orders).
+        if (!(0, featureFlags_1.servicesEnabled)()) {
+            return res.status(403).json({ message: "Service bookings are not available right now" });
+        }
         const { vendorId, items, address } = req.body;
         if (!isNonEmptyString(vendorId)) {
             return res.status(400).json({ message: "vendorId is required" });
@@ -101,7 +107,7 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             return res.status(400).json(addressError);
         }
         // Pending or paused vendors cannot take new orders.
-        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(Object.assign({ id: vendorId }, vendorVisibility_1.PUBLIC_VENDOR_FILTER));
+        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(yield (0, vendorVisibility_1.publicVendorQuery)({ id: vendorId }));
         if (!vendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }

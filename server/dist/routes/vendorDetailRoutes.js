@@ -15,6 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
 const vendorVisibility_1 = require("../services/vendorVisibility");
+const featureFlags_1 = require("../services/featureFlags");
+const shopCatalogue_1 = require("../services/shopCatalogue");
 const textSafety_1 = require("../services/textSafety");
 const router = express_1.default.Router();
 const MAX_SEARCH_LENGTH = 100;
@@ -37,13 +39,22 @@ function relevanceScore(vendor, term) {
         return 1;
     return 0;
 }
+// In shop mode (the default) `categories` in every response below are the vendor's product
+// categories and their `services` are products - see services/shopCatalogue.ts.
 router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { category, location, rating, verified, search, limit } = req.query;
-        const filter = Object.assign({}, vendorVisibility_1.PUBLIC_VENDOR_FILTER);
+        const shopMode = !(0, featureFlags_1.servicesEnabled)();
+        const filter = Object.assign({}, (yield (0, vendorVisibility_1.getPublicVendorFilter)()));
+        const andConditions = [];
         const categoryIds = parseMultiValue(category);
         if (categoryIds) {
-            filter["categories.id"] = { $in: categoryIds };
+            if (shopMode) {
+                andConditions.push({ id: { $in: yield (0, shopCatalogue_1.vendorIdsWithSlots)(categoryIds) } });
+            }
+            else {
+                filter["categories.id"] = { $in: categoryIds };
+            }
         }
         const locations = parseMultiValue(location);
         if (locations) {
@@ -61,13 +72,21 @@ router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const searchTerm = typeof search === "string" ? search.trim().slice(0, MAX_SEARCH_LENGTH) : "";
         if (searchTerm) {
             const pattern = new RegExp((0, textSafety_1.escapeRegExp)(searchTerm), "i");
-            filter.$or = [
+            const matches = [
                 { name: pattern },
                 { tagline: pattern },
                 { location: pattern },
-                { "categories.label": pattern },
-                { "categories.services.name": pattern },
             ];
+            if (shopMode) {
+                matches.push({ id: { $in: yield (0, shopCatalogue_1.vendorIdsMatchingProducts)(pattern) } });
+            }
+            else {
+                matches.push({ "categories.label": pattern }, { "categories.services.name": pattern });
+            }
+            filter.$or = matches;
+        }
+        if (andConditions.length > 0) {
+            filter.$and = andConditions;
         }
         let vendors = yield vendorDetailModel_1.VendorDetails.find(filter, PUBLIC_PROJECTION);
         if (searchTerm) {
@@ -81,7 +100,7 @@ router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!Number.isNaN(limitNum) && limitNum > 0) {
             vendors = vendors.slice(0, limitNum);
         }
-        return res.json(vendors);
+        return res.json(yield (0, shopCatalogue_1.presentVendors)(vendors));
     }
     catch (error) {
         console.error("Failed to fetch vendors:", error);
@@ -103,7 +122,7 @@ router.get("/:id/services/availability", (req, res) => __awaiter(void 0, void 0,
                 message: `At most ${MAX_AVAILABILITY_IDS} ids can be checked at once`,
             });
         }
-        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(Object.assign({ id }, vendorVisibility_1.PUBLIC_VENDOR_FILTER), { categories: 1 });
+        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(yield (0, vendorVisibility_1.publicVendorQuery)({ id }), { categories: 1 });
         if (!vendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }
@@ -135,11 +154,12 @@ router.get("/:id/services/availability", (req, res) => __awaiter(void 0, void 0,
 router.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(Object.assign({ id }, vendorVisibility_1.PUBLIC_VENDOR_FILTER), PUBLIC_PROJECTION);
+        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(yield (0, vendorVisibility_1.publicVendorQuery)({ id }), PUBLIC_PROJECTION);
         if (!vendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }
-        return res.json(vendor);
+        const [presented] = yield (0, shopCatalogue_1.presentVendors)([vendor]);
+        return res.json(presented);
     }
     catch (error) {
         console.error("Failed to fetch vendor detail:", error);
