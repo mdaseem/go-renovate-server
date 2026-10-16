@@ -1,22 +1,19 @@
 import express, { Request, Response, Router } from "express";
 import { FilterQuery } from "mongoose";
 import { VendorDetails } from "../models/vendorDetailModel";
+import { PUBLIC_VENDOR_FILTER } from "../services/vendorVisibility";
+import { escapeRegExp } from "../services/textSafety";
 
 const router: Router = express.Router();
 const MAX_SEARCH_LENGTH = 100;
 const MAX_AVAILABILITY_IDS = 50;
+// Internal fields that the public pages never need (the owner is a user account id).
+const PUBLIC_PROJECTION = { ownerUserId: 0 };
 
 function parseMultiValue(value: unknown): string[] | undefined {
   if (typeof value !== "string" || value.length === 0) return undefined;
   const values = value.split("|").filter(Boolean);
   return values.length > 0 ? values : undefined;
-}
-
-// Escapes regex metacharacters in free-text search input before it's used
-// to build a RegExp, so a query like "A/C (window)" can't throw or be
-// (ab)used to build an unintended pattern.
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function relevanceScore(vendor: { name?: string }, term: string): number {
@@ -30,7 +27,7 @@ function relevanceScore(vendor: { name?: string }, term: string): number {
 router.get("/", async (req: Request, res: Response) => {
   try {
     const { category, location, rating, verified, search, limit } = req.query;
-    const filter: FilterQuery<typeof VendorDetails> = {};
+    const filter: FilterQuery<typeof VendorDetails> = { ...PUBLIC_VENDOR_FILTER };
 
     const categoryIds = parseMultiValue(category);
     if (categoryIds) {
@@ -66,7 +63,7 @@ router.get("/", async (req: Request, res: Response) => {
       ];
     }
 
-    let vendors = await VendorDetails.find(filter);
+    let vendors = await VendorDetails.find(filter, PUBLIC_PROJECTION);
 
     if (searchTerm) {
       const lowerTerm = searchTerm.toLowerCase();
@@ -110,7 +107,7 @@ router.get("/:id/services/availability", async (req: Request, res: Response) => 
       });
     }
 
-    const vendor = await VendorDetails.findOne({ id }, { categories: 1 });
+    const vendor = await VendorDetails.findOne({ id, ...PUBLIC_VENDOR_FILTER }, { categories: 1 });
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }
@@ -148,7 +145,7 @@ router.get("/:id/services/availability", async (req: Request, res: Response) => 
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const vendor = await VendorDetails.findOne({ id });
+    const vendor = await VendorDetails.findOne({ id, ...PUBLIC_VENDOR_FILTER }, PUBLIC_PROJECTION);
 
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });

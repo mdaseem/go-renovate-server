@@ -56,6 +56,11 @@ const VendorDetailSchema = new mongoose.Schema({
   verified: Boolean,
   badges: [String],
   categories: [ServiceCategorySchema],
+  // Must match models/vendorDetailModel.ts, or Mongoose silently drops these fields.
+  status: String,
+  source: String,
+  ownerUserId: Number,
+  approvedAt: Date,
 });
 const VendorDetails = mongoose.model(
   "vendorDetails",
@@ -355,7 +360,11 @@ async function seed() {
   for (const detail of vendorDetails) {
     await VendorDetails.updateOne(
       { id: detail.id },
-      { $set: detail },
+      {
+        $set: detail,
+        // Only on first insert: re-running the seed never resets a status or owner that was set since.
+        $setOnInsert: { status: "active", source: "seed", ownerUserId: null, approvedAt: new Date() },
+      },
       { upsert: true },
     );
   }

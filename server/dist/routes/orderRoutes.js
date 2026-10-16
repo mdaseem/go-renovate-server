@@ -17,6 +17,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const orderModel_1 = require("../models/orderModel");
 const userModels_1 = require("../models/userModels");
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
+const vendorVisibility_1 = require("../services/vendorVisibility");
 const shiprocketService_1 = require("../services/shiprocketService");
 const router = express_1.default.Router();
 // requireAuth sets req.user = decoded, and the token is signed as
@@ -99,7 +100,8 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (addressError) {
             return res.status(400).json(addressError);
         }
-        const vendor = yield vendorDetailModel_1.VendorDetails.findOne({ id: vendorId });
+        // Pending or paused vendors cannot take new orders.
+        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(Object.assign({ id: vendorId }, vendorVisibility_1.PUBLIC_VENDOR_FILTER));
         if (!vendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }

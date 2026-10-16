@@ -15,6 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const groq_sdk_1 = __importDefault(require("groq-sdk"));
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
+const vendorVisibility_1 = require("../services/vendorVisibility");
+const textSafety_1 = require("../services/textSafety");
 const productModel_1 = require("../models/productModel");
 const router = express_1.default.Router();
 let client = null;
@@ -98,18 +100,20 @@ const TOOL_DEFINITIONS = [
 ];
 function runSearchVendors(input) {
     return __awaiter(this, void 0, void 0, function* () {
-        const filter = {};
-        if (input.query) {
-            filter.$or = [
-                { name: { $regex: input.query, $options: "i" } },
-                { tagline: { $regex: input.query, $options: "i" } },
-            ];
+        const filter = Object.assign({}, vendorVisibility_1.PUBLIC_VENDOR_FILTER);
+        // The model supplies these strings, so they are treated as untrusted text: escaped, length-capped,
+        // and matched literally (never as a regex).
+        const query = (0, textSafety_1.safeContainsFilter)(input.query);
+        if (query) {
+            filter.$or = [{ name: query }, { tagline: query }];
         }
-        if (input.location) {
-            filter.location = { $regex: input.location, $options: "i" };
+        const location = (0, textSafety_1.safeContainsFilter)(input.location);
+        if (location) {
+            filter.location = location;
         }
-        if (input.category) {
-            filter["categories.label"] = { $regex: input.category, $options: "i" };
+        const category = (0, textSafety_1.safeContainsFilter)(input.category);
+        if (category) {
+            filter["categories.label"] = category;
         }
         const vendors = yield vendorDetailModel_1.VendorDetails.find(filter).limit(10);
         return JSON.stringify(vendors.map((v) => {
@@ -131,7 +135,7 @@ function runSearchVendors(input) {
 function runGetVendorServices(input) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
-        const vendor = yield vendorDetailModel_1.VendorDetails.findOne({ id: input.vendorId });
+        const vendor = yield vendorDetailModel_1.VendorDetails.findOne(Object.assign({ id: String(input.vendorId) }, vendorVisibility_1.PUBLIC_VENDOR_FILTER));
         if (!vendor) {
             return JSON.stringify({ error: "Vendor not found" });
         }
@@ -158,8 +162,9 @@ function runGetVendorServices(input) {
 function runSearchProducts(input) {
     return __awaiter(this, void 0, void 0, function* () {
         const filter = {};
-        if (input.query) {
-            filter.description = { $regex: input.query, $options: "i" };
+        const query = (0, textSafety_1.safeContainsFilter)(input.query);
+        if (query) {
+            filter.description = query;
         }
         if (typeof input.maxPrice === "number") {
             filter.discountPrice = { $lte: input.maxPrice };
