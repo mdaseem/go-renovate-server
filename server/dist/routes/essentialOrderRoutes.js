@@ -20,6 +20,7 @@ const vendorNameLookup_1 = require("../services/vendorNameLookup");
 const orderModel_1 = require("../models/orderModel");
 const vendorDetailModel_1 = require("../models/vendorDetailModel");
 const vendorVisibility_1 = require("../services/vendorVisibility");
+const productVisibility_1 = require("../services/productVisibility");
 const router = express_1.default.Router();
 // requireAuth sets req.user = decoded, and the token is signed as
 // { name: userFound } (a pre-existing quirk of authorizeUser.ts, matching
@@ -128,6 +129,12 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const blockedVendors = yield vendorDetailModel_1.VendorDetails.find({ id: { $in: vendorIdsInOrder }, status: { $in: vendorVisibility_1.NOT_PUBLIC_STATUSES } }, { id: 1 });
         const blockedVendorIds = new Set(blockedVendors.map((vendor) => vendor.get("id")));
         for (const essential of essentials) {
+            // A product that is pending, paused or rejected cannot be bought, whatever the client sends.
+            if (!(0, productVisibility_1.isPublicStatus)(essential.get("status"))) {
+                return res.status(400).json({
+                    message: `${essential.get("name")} is not available right now`,
+                });
+            }
             if (essential.get("purchaseMode") === "external-store") {
                 return res.status(400).json({
                     message: `${essential.get("name")} is sold on the vendor's own store, not here`,

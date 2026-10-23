@@ -6,6 +6,7 @@ import { getVendorNameMap } from "../services/vendorNameLookup";
 import { OrderStatus, ORDER_STATUS_STEPS } from "../models/orderModel";
 import { VendorDetails } from "../models/vendorDetailModel";
 import { NOT_PUBLIC_STATUSES } from "../services/vendorVisibility";
+import { isPublicStatus } from "../services/productVisibility";
 
 const router: Router = express.Router();
 
@@ -167,6 +168,12 @@ router.post("/", async (req: Request, res: Response) => {
     );
     const blockedVendorIds = new Set(blockedVendors.map((vendor) => vendor.get("id") as string));
     for (const essential of essentials) {
+      // A product that is pending, paused or rejected cannot be bought, whatever the client sends.
+      if (!isPublicStatus(essential.get("status"))) {
+        return res.status(400).json({
+          message: `${essential.get("name")} is not available right now`,
+        });
+      }
       if (essential.get("purchaseMode") === "external-store") {
         return res.status(400).json({
           message: `${essential.get("name")} is sold on the vendor's own store, not here`,

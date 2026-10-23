@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.publicVendorQuery = exports.getPublicVendorFilter = exports.PUBLIC_VENDOR_FILTER = exports.NOT_PUBLIC_STATUSES = void 0;
 const essentialModel_1 = require("../models/essentialModel");
 const featureFlags_1 = require("./featureFlags");
+const productVisibility_1 = require("./productVisibility");
 // A profile that is pending or paused is never public and cannot take orders. A missing status means
 // active, which keeps every profile created before sign-up existed visible.
 exports.NOT_PUBLIC_STATUSES = ["pending", "paused"];
@@ -20,10 +21,10 @@ exports.PUBLIC_VENDOR_FILTER = {
     status: { $nin: exports.NOT_PUBLIC_STATUSES },
     "categories.0": { $exists: true },
 };
-// Shop mode (the default): a vendor is public once it has at least one product.
+// Shop mode (the default): a vendor is public once it has at least one LIVE product.
 function shopVendorFilter() {
     return __awaiter(this, void 0, void 0, function* () {
-        const vendorIds = yield essentialModel_1.Essentials.distinct("vendorId");
+        const vendorIds = yield essentialModel_1.Essentials.distinct("vendorId", productVisibility_1.PUBLIC_PRODUCT_FILTER);
         return { status: { $nin: exports.NOT_PUBLIC_STATUSES }, id: { $in: vendorIds } };
     });
 }

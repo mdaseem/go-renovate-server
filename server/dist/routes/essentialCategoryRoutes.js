@@ -16,6 +16,7 @@ const express_1 = __importDefault(require("express"));
 const categoryModel_1 = require("../models/categoryModel");
 const roomModel_1 = require("../models/roomModel");
 const essentialModel_1 = require("../models/essentialModel");
+const productVisibility_1 = require("../services/productVisibility");
 const spaceModel_1 = require("../models/spaceModel");
 const vendorNameLookup_1 = require("../services/vendorNameLookup");
 const router = express_1.default.Router();
@@ -61,7 +62,7 @@ router.get("/:slug", (req, res) => __awaiter(void 0, void 0, void 0, function* (
         }
         const [rooms, essentials, spaces] = yield Promise.all([
             roomModel_1.Rooms.find(roomFilter),
-            essentialModel_1.Essentials.find({ categorySlugs: slug }),
+            essentialModel_1.Essentials.find(Object.assign({ categorySlugs: slug }, productVisibility_1.PUBLIC_PRODUCT_FILTER)),
             // Selectable base layouts for the Customize preview, default first.
             spaceModel_1.Spaces.find({ categorySlug: slug }).sort({ isDefault: -1, sortOrder: 1 }),
         ]);

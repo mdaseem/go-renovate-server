@@ -9,10 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.vendorIdsMatchingProducts = exports.vendorIdsWithSlots = exports.presentVendors = exports.buildShopCategories = void 0;
+exports.vendorIdsMatchingProducts = exports.vendorIdsWithSlots = exports.presentVendors = exports.buildShopCategories = exports.slotIcon = void 0;
 const categoryModel_1 = require("../models/categoryModel");
 const essentialModel_1 = require("../models/essentialModel");
 const featureFlags_1 = require("./featureFlags");
+const productVisibility_1 = require("./productVisibility");
 // Shop mode (SERVICES_ENABLED off): the vendor pages show a vendor's PRODUCTS in the same shape the
 // pages already use for services - `categories[].services[]` - so the list, filters, search, category
 // pages and vendor page keep their layout. Here "category" = the product's slot (Sofa, Lighting...) and
@@ -37,6 +38,12 @@ const SLOT_ICONS = {
     countertop: "🍳",
 };
 const DEFAULT_SLOT_ICON = "📦";
+// The emoji shown for a product type; unknown types get a plain box.
+function slotIcon(slotId) {
+    var _a;
+    return (_a = SLOT_ICONS[slotId]) !== null && _a !== void 0 ? _a : DEFAULT_SLOT_ICON;
+}
+exports.slotIcon = slotIcon;
 function humanize(slotId) {
     const text = slotId.replace(/-/g, " ");
     return text.charAt(0).toUpperCase() + text.slice(1);
@@ -64,6 +71,13 @@ function labelFor(slot, categorySlugs, labels) {
         if (label)
             return label;
     }
+    // A product that belongs to no room (a vendor's, until the owner adds it to rooms) still gets the
+    // slot's usual name, so "Coffee Table" is spelled the same on every vendor's page.
+    for (const slotLabels of labels.values()) {
+        const label = slotLabels.get(slot);
+        if (label)
+            return label;
+    }
     return humanize(slot);
 }
 // vendorId -> that vendor's products grouped by slot. One query for the products and one tiny one for
@@ -75,7 +89,7 @@ function buildShopCategories(vendorIds) {
         if (vendorIds.length === 0)
             return result;
         const [products, labels] = yield Promise.all([
-            essentialModel_1.Essentials.find({ vendorId: { $in: vendorIds } }).sort({ name: 1 }).lean(),
+            essentialModel_1.Essentials.find(Object.assign({ vendorId: { $in: vendorIds } }, productVisibility_1.PUBLIC_PRODUCT_FILTER)).sort({ name: 1 }).lean(),
             loadSlotLabels(),
         ]);
         const grouped = new Map();
@@ -144,7 +158,7 @@ exports.presentVendors = presentVendors;
 // Vendor ids that sell at least one product in any of these slots (the category filter in shop mode).
 function vendorIdsWithSlots(slotIds) {
     return __awaiter(this, void 0, void 0, function* () {
-        return essentialModel_1.Essentials.distinct("vendorId", { slot: { $in: slotIds } });
+        return essentialModel_1.Essentials.distinct("vendorId", Object.assign({ slot: { $in: slotIds } }, productVisibility_1.PUBLIC_PRODUCT_FILTER));
     });
 }
 exports.vendorIdsWithSlots = vendorIdsWithSlots;
@@ -159,9 +173,7 @@ function vendorIdsMatchingProducts(pattern) {
                     matchingSlots.add(slot.id);
             }
         }
-        return essentialModel_1.Essentials.distinct("vendorId", {
-            $or: [{ name: pattern }, { slot: { $in: Array.from(matchingSlots) } }],
-        });
+        return essentialModel_1.Essentials.distinct("vendorId", Object.assign({ $or: [{ name: pattern }, { slot: { $in: Array.from(matchingSlots) } }] }, productVisibility_1.PUBLIC_PRODUCT_FILTER));
     });
 }
 exports.vendorIdsMatchingProducts = vendorIdsMatchingProducts;

@@ -24,6 +24,9 @@ const prductRoutes_1 = __importDefault(require("./routes/prductRoutes"));
 const vendorDetailRoutes_1 = __importDefault(require("./routes/vendorDetailRoutes"));
 const vendorApplicationRoutes_1 = __importDefault(require("./routes/vendorApplicationRoutes"));
 const vendorAccountRoutes_1 = __importDefault(require("./routes/vendorAccountRoutes"));
+const vendorOrderRoutes_1 = __importDefault(require("./routes/vendorOrderRoutes"));
+const vendorProductRoutes_1 = __importDefault(require("./routes/vendorProductRoutes"));
+const adminProductRoutes_1 = __importDefault(require("./routes/adminProductRoutes"));
 const addUser_1 = __importDefault(require("./routes/addUser"));
 const roomRoutes_1 = __importDefault(require("./routes/roomRoutes"));
 const authorizeUser_1 = __importDefault(require("./routes/authorizeUser"));
@@ -88,6 +91,11 @@ app.use("/auth", (req, res, next) => {
 app.use("/products", authMiddleware_1.requireAuth, prductRoutes_1.default);
 app.use("/vendors", vendorDetailRoutes_1.default);
 app.use("/vendor-applications", vendorApplicationRoutes_1.default);
+// Vendor-only (router-level requireAuth + requireRole("vendor")); mounted before the bare /vendor router.
+app.use("/vendor/orders", vendorOrderRoutes_1.default);
+app.use("/vendor/products", vendorProductRoutes_1.default);
+// Owner-only review of vendor-created products (router-level requireAuth + requireRole("admin")).
+app.use("/admin/products", adminProductRoutes_1.default);
 app.use("/vendor", vendorAccountRoutes_1.default);
 app.use("/rooms", roomRoutes_1.default);
 app.use("/ai", authMiddleware_1.requireAuth, aiChatRoutes_1.default);
