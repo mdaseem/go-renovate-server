@@ -30,6 +30,8 @@ const EssentialOrderStatusHistorySchema = new Schema(
     status: { type: String, required: true },
     note: String,
     changedAt: { type: Date, default: Date.now },
+    // Who made the change (set by the server; entries written before vendors could act have none).
+    by: { type: String, enum: ["buyer", "vendor", "admin", "system"] },
   },
   { _id: false },
 );
@@ -49,9 +51,10 @@ const ShiprocketInfoSchema = new Schema(
 // One sub-order per vendor within a single checkout — each progresses
 // through the same OrderStatus state machine as orderModel.ts's Orders
 // (reused, not duplicated), independently, since each ships separately.
-// Vendor-approval/status-transition endpoints (mirroring orderRoutes.ts's
-// PATCH /:id/status) are deliberately not built yet — see the
-// room-based-discovery skill's Ordered implementation list.
+// A vendor moves their own sub-order through routes/vendorOrderRoutes.ts
+// (rules in services/vendorOrderRules.ts). `shiprocket` also holds the courier and
+// tracking a vendor types in when shipping by hand, so the buyer's order page
+// shows it without a separate field.
 const VendorOrderSchema = new Schema(
   {
     vendorId: { type: String, required: true },
@@ -61,6 +64,8 @@ const VendorOrderSchema = new Schema(
     status: { type: String, required: true, default: "PLACED" },
     statusHistory: [EssentialOrderStatusHistorySchema],
     shiprocket: { type: ShiprocketInfoSchema, default: null },
+    // Set once the reserved stock has been put back after a decline/cancel.
+    stockReleasedAt: Date,
   },
   { _id: true },
 );
@@ -82,6 +87,8 @@ const EssentialOrderSchema = new Schema(
 );
 
 EssentialOrderSchema.index({ userEmail: 1 });
+// The vendor inbox lists the orders that contain a vendor's sub-order, newest first.
+EssentialOrderSchema.index({ "vendorOrders.vendorId": 1, _id: -1 });
 
 export const EssentialOrders = mongoose.model(
   "essentialOrder",

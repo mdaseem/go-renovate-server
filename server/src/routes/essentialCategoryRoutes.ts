@@ -2,6 +2,7 @@ import express, { Request, Response, Router } from "express";
 import { Categories } from "../models/categoryModel";
 import { Rooms } from "../models/roomModel";
 import { Essentials } from "../models/essentialModel";
+import { PUBLIC_PRODUCT_FILTER } from "../services/productVisibility";
 import { Spaces } from "../models/spaceModel";
 import { getVendorNameMap } from "../services/vendorNameLookup";
 
@@ -50,7 +51,7 @@ router.get("/:slug", async (req: Request, res: Response) => {
 
     const [rooms, essentials, spaces] = await Promise.all([
       Rooms.find(roomFilter),
-      Essentials.find({ categorySlugs: slug }),
+      Essentials.find({ categorySlugs: slug, ...PUBLIC_PRODUCT_FILTER }),
       // Selectable base layouts for the Customize preview, default first.
       Spaces.find({ categorySlug: slug }).sort({ isDefault: -1, sortOrder: 1 }),
     ]);

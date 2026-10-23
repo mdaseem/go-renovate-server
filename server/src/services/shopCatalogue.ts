@@ -1,6 +1,7 @@
 import { Categories } from "../models/categoryModel";
 import { Essentials } from "../models/essentialModel";
 import { servicesEnabled } from "./featureFlags";
+import { PUBLIC_PRODUCT_FILTER } from "./productVisibility";
 
 // Shop mode (SERVICES_ENABLED off): the vendor pages show a vendor's PRODUCTS in the same shape the
 // pages already use for services - `categories[].services[]` - so the list, filters, search, category
@@ -54,6 +55,11 @@ export interface ShopCategory {
   services: ShopItem[];
 }
 
+// The emoji shown for a product type; unknown types get a plain box.
+export function slotIcon(slotId: string): string {
+  return SLOT_ICONS[slotId] ?? DEFAULT_SLOT_ICON;
+}
+
 function humanize(slotId: string): string {
   const text = slotId.replace(/-/g, " ");
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -82,6 +88,12 @@ function labelFor(
     const label = labels.get(slug)?.get(slot);
     if (label) return label;
   }
+  // A product that belongs to no room (a vendor's, until the owner adds it to rooms) still gets the
+  // slot's usual name, so "Coffee Table" is spelled the same on every vendor's page.
+  for (const slotLabels of labels.values()) {
+    const label = slotLabels.get(slot);
+    if (label) return label;
+  }
   return humanize(slot);
 }
 
@@ -94,7 +106,7 @@ export async function buildShopCategories(
   if (vendorIds.length === 0) return result;
 
   const [products, labels] = await Promise.all([
-    Essentials.find({ vendorId: { $in: vendorIds } }).sort({ name: 1 }).lean(),
+    Essentials.find({ vendorId: { $in: vendorIds }, ...PUBLIC_PRODUCT_FILTER }).sort({ name: 1 }).lean(),
     loadSlotLabels(),
   ]);
 
@@ -166,7 +178,7 @@ export async function presentVendors<T>(vendors: T[]): Promise<unknown[]> {
 
 // Vendor ids that sell at least one product in any of these slots (the category filter in shop mode).
 export async function vendorIdsWithSlots(slotIds: string[]): Promise<string[]> {
-  return Essentials.distinct("vendorId", { slot: { $in: slotIds } });
+  return Essentials.distinct("vendorId", { slot: { $in: slotIds }, ...PUBLIC_PRODUCT_FILTER });
 }
 
 // Vendor ids with a product whose name, or whose slot name, matches the search pattern.
@@ -180,5 +192,6 @@ export async function vendorIdsMatchingProducts(pattern: RegExp): Promise<string
   }
   return Essentials.distinct("vendorId", {
     $or: [{ name: pattern }, { slot: { $in: Array.from(matchingSlots) } }],
+    ...PUBLIC_PRODUCT_FILTER,
   });
 }

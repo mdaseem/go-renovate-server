@@ -3,6 +3,7 @@ import express, { Request, Response, Router } from "express";
 import mongoose from "mongoose";
 import { Categories } from "../models/categoryModel";
 import { Essentials } from "../models/essentialModel";
+import { PUBLIC_PRODUCT_FILTER } from "../services/productVisibility";
 import { Designs } from "../models/designModel";
 
 const router: Router = express.Router();
@@ -158,6 +159,7 @@ router.post("/", async (req: Request, res: Response) => {
       Essentials.countDocuments({
         _id: { $in: uniqueIds.map((id) => new mongoose.Types.ObjectId(id)) },
         categorySlugs: categorySlug,
+        ...PUBLIC_PRODUCT_FILTER,
       }),
     ]);
     if (!category) return res.status(404).json({ message: "Category not found" });

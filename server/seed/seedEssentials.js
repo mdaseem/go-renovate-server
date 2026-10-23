@@ -19,6 +19,16 @@ const EssentialSchema = new mongoose.Schema({
   cutoutUrl: String,
   dimensionsCm: { w: Number, h: Number, d: Number },
   placement: { zone: String, layer: Number, elevationCm: Number, supports: Boolean },
+  // Vendor product fields (src/models/essentialModel.ts). Seeded products have none of them (a missing
+  // status means live); they are listed so this schema copy never drops them. The seed only ever
+  // replaces its own fixed ids, so vendor-created products are never touched.
+  status: String,
+  source: String,
+  pausedBy: String,
+  submittedAt: Date,
+  approvedAt: Date,
+  reviewedAt: Date,
+  reviewNote: String,
   // Keep in step with src/models/essentialModel.ts: a field missing here is silently
   // dropped on write (this seed has its own copy of the schema).
   model3d: {

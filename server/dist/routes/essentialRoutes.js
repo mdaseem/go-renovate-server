@@ -16,6 +16,7 @@ const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const essentialModel_1 = require("../models/essentialModel");
 const vendorNameLookup_1 = require("../services/vendorNameLookup");
+const productVisibility_1 = require("../services/productVisibility");
 const router = express_1.default.Router();
 function parseMultiValue(value) {
     if (typeof value !== "string" || value.length === 0)
@@ -26,7 +27,8 @@ function parseMultiValue(value) {
 router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { category, slot, vendorId, minPrice, maxPrice, purchaseMode } = req.query;
-        const filter = {};
+        // Only live products are ever listed (see services/productVisibility.ts).
+        const filter = Object.assign({}, productVisibility_1.PUBLIC_PRODUCT_FILTER);
         if (typeof category === "string" && category.length > 0) {
             filter.categorySlugs = category;
         }
@@ -82,7 +84,7 @@ router.get("/availability", (req, res) => __awaiter(void 0, void 0, void 0, func
             });
         }
         const validIds = ids.filter((id) => mongoose_1.default.Types.ObjectId.isValid(id));
-        const found = yield essentialModel_1.Essentials.find({ _id: { $in: validIds } }, { price: 1, stock: 1, purchaseMode: 1 });
+        const found = yield essentialModel_1.Essentials.find({ _id: { $in: validIds } }, { price: 1, stock: 1, purchaseMode: 1, status: 1 });
         const docById = new Map(found.map((doc) => [doc._id.toString(), doc]));
         // Available = still in the catalog AND, for tracked on-platform items,
         // at least one unit in stock. `stock` is returned (null = untracked) so
@@ -90,8 +92,10 @@ router.get("/availability", (req, res) => __awaiter(void 0, void 0, void 0, func
         // stock.
         const essentials = ids.map((id) => {
             const doc = docById.get(id);
-            if (!doc)
+            // A product that is gone, or no longer live (pending, paused, rejected), is not available.
+            if (!doc || !(0, productVisibility_1.isPublicStatus)(doc.get("status"))) {
                 return { id, isAvailable: false, price: null, stock: null };
+            }
             const stock = doc.get("stock");
             const isTracked = doc.get("purchaseMode") !== "external-store" && typeof stock === "number";
             return {
@@ -113,7 +117,7 @@ router.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (!mongoose_1.default.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({ message: "Invalid essential id" });
         }
-        const essential = yield essentialModel_1.Essentials.findById(req.params.id);
+        const essential = yield essentialModel_1.Essentials.findOne(Object.assign({ _id: req.params.id }, productVisibility_1.PUBLIC_PRODUCT_FILTER));
         if (!essential) {
             return res.status(404).json({ message: "Essential not found" });
         }

@@ -2,6 +2,7 @@ import express, { Request, Response, Router } from "express";
 import mongoose, { FilterQuery } from "mongoose";
 import { Essentials } from "../models/essentialModel";
 import { getVendorNameMap } from "../services/vendorNameLookup";
+import { PUBLIC_PRODUCT_FILTER, isPublicStatus } from "../services/productVisibility";
 
 const router: Router = express.Router();
 
@@ -15,7 +16,8 @@ router.get("/", async (req: Request, res: Response) => {
   try {
     const { category, slot, vendorId, minPrice, maxPrice, purchaseMode } =
       req.query;
-    const filter: FilterQuery<typeof Essentials> = {};
+    // Only live products are ever listed (see services/productVisibility.ts).
+    const filter: FilterQuery<typeof Essentials> = { ...PUBLIC_PRODUCT_FILTER };
 
     if (typeof category === "string" && category.length > 0) {
       filter.categorySlugs = category;
@@ -80,7 +82,7 @@ router.get("/availability", async (req: Request, res: Response) => {
     const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
     const found = await Essentials.find(
       { _id: { $in: validIds } },
-      { price: 1, stock: 1, purchaseMode: 1 },
+      { price: 1, stock: 1, purchaseMode: 1, status: 1 },
     );
     const docById = new Map(found.map((doc) => [doc._id.toString(), doc]));
 
@@ -90,7 +92,10 @@ router.get("/availability", async (req: Request, res: Response) => {
     // stock.
     const essentials = ids.map((id) => {
       const doc = docById.get(id);
-      if (!doc) return { id, isAvailable: false, price: null, stock: null };
+      // A product that is gone, or no longer live (pending, paused, rejected), is not available.
+      if (!doc || !isPublicStatus(doc.get("status"))) {
+        return { id, isAvailable: false, price: null, stock: null };
+      }
       const stock = doc.get("stock") as number | undefined;
       const isTracked =
         doc.get("purchaseMode") !== "external-store" && typeof stock === "number";
@@ -114,7 +119,7 @@ router.get("/:id", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid essential id" });
     }
 
-    const essential = await Essentials.findById(req.params.id);
+    const essential = await Essentials.findOne({ _id: req.params.id, ...PUBLIC_PRODUCT_FILTER });
     if (!essential) {
       return res.status(404).json({ message: "Essential not found" });
     }

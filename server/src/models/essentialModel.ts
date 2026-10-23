@@ -78,6 +78,18 @@ const EssentialSchema = new Schema({
   dimensionsCm: DimensionsSchema,
   placement: PlacementSchema,
   model3d: Model3dSchema,
+  // Vendor-created products (routes/vendorProductRoutes.ts): see services/productVisibility.ts. No schema
+  // default on `status` on purpose: a missing status means live, which keeps every seeded product public.
+  status: { type: String, enum: ["pending", "live", "paused", "rejected"] },
+  // "vendor" = created by a vendor through the product screens; missing = seeded or entered by the owner.
+  source: { type: String, enum: ["vendor"] },
+  // Who paused it: a vendor may resume their own pause, but never one made by the owner.
+  pausedBy: { type: String, enum: ["vendor", "admin"] },
+  submittedAt: Date,
+  approvedAt: Date,
+  reviewedAt: Date,
+  // The owner's reason when a product is rejected (shown to the vendor).
+  reviewNote: String,
 });
 
 // Supports GET /essentials query-param filtering (category, slot, vendorId, price range, purchaseMode)
@@ -86,6 +98,8 @@ EssentialSchema.index({ slot: 1 });
 EssentialSchema.index({ vendorId: 1 });
 EssentialSchema.index({ price: 1 });
 EssentialSchema.index({ purchaseMode: 1 });
+EssentialSchema.index({ vendorId: 1, status: 1 });
+EssentialSchema.index({ source: 1, status: 1 });
 
 // A product whose size cannot be drawn honestly (a cutout with no width/height,
 // a negative number…) is rejected on save/create. Merely unusual sizes are only

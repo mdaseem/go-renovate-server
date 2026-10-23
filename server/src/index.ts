@@ -9,6 +9,9 @@ import prductRoutes from "./routes/prductRoutes";
 import vendorDetailRoutes from "./routes/vendorDetailRoutes";
 import vendorApplicationRoutes from "./routes/vendorApplicationRoutes";
 import vendorAccountRoutes from "./routes/vendorAccountRoutes";
+import vendorOrderRoutes from "./routes/vendorOrderRoutes";
+import vendorProductRoutes from "./routes/vendorProductRoutes";
+import adminProductRoutes from "./routes/adminProductRoutes";
 import addUser from "./routes/addUser";
 import roomRoutes from "./routes/roomRoutes";
 import authorize from "./routes/authorizeUser";
@@ -91,6 +94,11 @@ app.use("/auth", (req: Request, res: Response, next: NextFunction) => {
 app.use("/products", requireAuth, prductRoutes);
 app.use("/vendors", vendorDetailRoutes);
 app.use("/vendor-applications", vendorApplicationRoutes);
+// Vendor-only (router-level requireAuth + requireRole("vendor")); mounted before the bare /vendor router.
+app.use("/vendor/orders", vendorOrderRoutes);
+app.use("/vendor/products", vendorProductRoutes);
+// Owner-only review of vendor-created products (router-level requireAuth + requireRole("admin")).
+app.use("/admin/products", adminProductRoutes);
 app.use("/vendor", vendorAccountRoutes);
 app.use("/rooms", roomRoutes);
 app.use("/ai", requireAuth, aiChatRoutes);

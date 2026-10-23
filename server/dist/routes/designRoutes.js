@@ -17,6 +17,7 @@ const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const categoryModel_1 = require("../models/categoryModel");
 const essentialModel_1 = require("../models/essentialModel");
+const productVisibility_1 = require("../services/productVisibility");
 const designModel_1 = require("../models/designModel");
 const router = express_1.default.Router();
 const MAX_PIECES = 60;
@@ -163,10 +164,7 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const uniqueIds = [...new Set(essentialIds)];
         const [category, found] = yield Promise.all([
             categoryModel_1.Categories.exists({ slug: categorySlug }),
-            essentialModel_1.Essentials.countDocuments({
-                _id: { $in: uniqueIds.map((id) => new mongoose_1.default.Types.ObjectId(id)) },
-                categorySlugs: categorySlug,
-            }),
+            essentialModel_1.Essentials.countDocuments(Object.assign({ _id: { $in: uniqueIds.map((id) => new mongoose_1.default.Types.ObjectId(id)) }, categorySlugs: categorySlug }, productVisibility_1.PUBLIC_PRODUCT_FILTER)),
         ]);
         if (!category)
             return res.status(404).json({ message: "Category not found" });
