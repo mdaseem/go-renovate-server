@@ -6,13 +6,24 @@ import { Essentials } from "../models/essentialModel";
 import { effectiveStatus, NOT_PUBLIC_PRODUCT_STATUSES, ProductStatus } from "../services/productVisibility";
 import { loadProductTypes, OTHER_TYPE_ID, ProductType } from "../services/productTypes";
 import { makeRateWindow } from "../services/rateWindow";
+import {
+  checkUploadedPhoto,
+  createUploadTicket,
+  deleteUploadedPhoto,
+  getCloudinaryConfig,
+  isOwnPhotoId,
+  PHOTO_LIMITS,
+  PhotoCheck,
+  publicIdFromUrl,
+} from "../services/cloudinary";
 import { MAX_PRODUCTS_PER_VENDOR, parseProductInput } from "../services/vendorProductRules";
 
 // The vendor's own products: add, edit, pause, resume, duplicate. Every route is vendor-only and works on
 // products whose `vendorId` is the vendor's own, read from the database (requireRole), never from the
 // request. A new product starts "pending" and is not public until the owner approves it
-// (routes/adminProductRoutes.ts). Photos are not part of this yet: a product has none and the pages draw
-// the default placeholder (the photo step comes later).
+// (routes/adminProductRoutes.ts). Photos: the phone uploads straight to Cloudinary with a ticket from
+// POST /photo-ticket, then POST /:id/photos asks Cloudinary what arrived and saves the address
+// (services/cloudinary.ts). A product without photos shows the default placeholder.
 const router: Router = express.Router();
 router.use(requireAuth, requireRole("vendor"));
 
@@ -20,6 +31,10 @@ const DEFAULT_PAGE_SIZE = 30;
 const MAX_PAGE_SIZE = 50;
 // Creating (or duplicating) products: 30 an hour per vendor.
 const createWindow = makeRateWindow(30, 60 * 60 * 1000);
+// Photos: upload tickets and attach checks, per vendor per hour. The attach check calls Cloudinary's
+// admin API, which has a small hourly quota for the whole account, so keep these modest.
+const ticketWindow = makeRateWindow(40, 60 * 60 * 1000);
+const attachWindow = makeRateWindow(40, 60 * 60 * 1000);
 
 interface LeanProduct {
   _id: mongoose.Types.ObjectId;
@@ -69,6 +84,8 @@ export function toProductView(doc: LeanProduct, types: Map<string, ProductType>)
     reviewNote: doc.reviewNote ?? "",
     hasPhoto: Boolean(imageUrl),
     imageUrl,
+    // The vendor's own uploaded photos, in order (the first one is the main picture).
+    photos: images,
     inRooms: (doc.categorySlugs ?? []).length > 0,
     createdByVendor: doc.source === "vendor",
     submittedAt: doc.submittedAt ?? null,
@@ -101,6 +118,12 @@ router.get("/options", async (_req: Request, res: Response) => {
     return res.json({
       types: Array.from(types.values()).map(({ id, label, icon }) => ({ id, label, icon })),
       maxProducts: MAX_PRODUCTS_PER_VENDOR,
+      photos: {
+        enabled: getCloudinaryConfig() !== null,
+        maxPerProduct: PHOTO_LIMITS.maxPerProduct,
+        maxBytes: PHOTO_LIMITS.maxBytes,
+        minSide: PHOTO_LIMITS.minSide,
+      },
     });
   } catch (error) {
     console.error("Failed to load product types:", error);
@@ -183,6 +206,132 @@ router.post("/", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Failed to add product:", error);
     return res.status(500).json({ message: "We could not save your product. Please try again." });
+  }
+});
+
+// --- POST /vendor/products/photo-ticket: permission to upload ONE photo into the vendor's own folder
+// Needs no product yet, so photos can be picked while the form is still being filled in.
+router.post("/photo-ticket", async (req: Request, res: Response) => {
+  try {
+    const vendorId = currentVendorId(req);
+    if (!vendorId) return res.status(403).json(NO_PROFILE);
+    const config = getCloudinaryConfig();
+    if (!config) return res.status(503).json({ message: "Photo upload is not available right now. Please try again later." });
+    if (!ticketWindow.take(vendorId)) {
+      return res.status(429).json({ message: "You are uploading photos very quickly. Please wait a few minutes and try again." });
+    }
+    const ticket = createUploadTicket(config, vendorId);
+    if (!ticket) return res.status(403).json(NO_PROFILE);
+    res.set("Cache-Control", "no-store");
+    return res.json(ticket);
+  } catch (error) {
+    console.error("Failed to create a photo ticket:", error);
+    return res.status(500).json({ message: "We could not start the upload. Please try again." });
+  }
+});
+
+const PHOTO_PROBLEMS: Record<Exclude<PhotoCheck, { ok: true }>["reason"], { status: number; message: string }> = {
+  missing: { status: 400, message: "We couldn't find that photo. Please upload it again." },
+  format: { status: 400, message: "Photos must be JPG, PNG or WebP." },
+  size: { status: 400, message: `That photo is too large. The limit is ${PHOTO_LIMITS.maxBytes / (1024 * 1024)} MB.` },
+  dimensions: {
+    status: 400,
+    message: `Photos must be between ${PHOTO_LIMITS.minSide} and ${PHOTO_LIMITS.maxSide} pixels on each side.`,
+  },
+  unavailable: { status: 502, message: "We couldn't check your photo right now. Please try again." },
+};
+
+// --- POST /vendor/products/:id/photos  { publicId }: add an uploaded photo to the product
+// The id must sit in this vendor's own folder; Cloudinary is asked what it really holds there, and the
+// address saved comes from its answer. Repeating the same call changes nothing.
+router.post("/:id/photos", async (req: Request, res: Response) => {
+  try {
+    const vendorId = currentVendorId(req);
+    if (!vendorId) return res.status(403).json(NO_PROFILE);
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: "Product not found" });
+    const config = getCloudinaryConfig();
+    if (!config) return res.status(503).json({ message: "Photo upload is not available right now. Please try again later." });
+
+    const publicId: unknown = req.body?.publicId;
+    if (!isOwnPhotoId(vendorId, publicId)) {
+      return res.status(400).json({ message: "That photo doesn't belong to your account.", errors: { photos: "Upload the photo again." } });
+    }
+    const existing = (await Essentials.findOne({ _id: req.params.id, vendorId }, { images: 1 }).lean()) as unknown as LeanProduct | null;
+    if (!existing) return res.status(404).json({ message: "Product not found" });
+    if ((existing.images ?? []).length >= PHOTO_LIMITS.maxPerProduct) {
+      return res.status(409).json({ message: `A product can have up to ${PHOTO_LIMITS.maxPerProduct} photos.` });
+    }
+    if (!attachWindow.take(vendorId)) {
+      return res.status(429).json({ message: "You are adding photos very quickly. Please wait a few minutes and try again." });
+    }
+
+    const check = await checkUploadedPhoto(config, publicId);
+    if (!check.ok) {
+      const problem = PHOTO_PROBLEMS[check.reason];
+      // A file that arrived but breaks the rules is removed so it does not sit in the account unused.
+      if (check.reason === "format" || check.reason === "size" || check.reason === "dimensions") {
+        void deleteUploadedPhoto(config, publicId);
+      }
+      return res.status(problem.status).json({ message: problem.message, errors: { photos: problem.message } });
+    }
+
+    const types = await loadProductTypes();
+    const lastSlot = PHOTO_LIMITS.maxPerProduct - 1;
+    let updated = (await Essentials.findOneAndUpdate(
+      { _id: req.params.id, vendorId, images: { $ne: check.url }, [`images.${lastSlot}`]: { $exists: false } },
+      { $push: { images: check.url } },
+      { new: true, lean: true },
+    )) as unknown as LeanProduct | null;
+    if (!updated) {
+      // Already attached (a repeat of the same call) or the limit was reached by a parallel upload.
+      const current = (await Essentials.findOne({ _id: req.params.id, vendorId }).lean()) as unknown as LeanProduct | null;
+      if (!current) return res.status(404).json({ message: "Product not found" });
+      if ((current.images ?? []).includes(check.url)) return res.json({ product: toProductView(current, types) });
+      return res.status(409).json({ message: `A product can have up to ${PHOTO_LIMITS.maxPerProduct} photos.` });
+    }
+    // Like any other edit, a photo added to a product the owner sent back puts it in review again.
+    if (updated.status === "rejected") {
+      const again = (await Essentials.findOneAndUpdate(
+        { _id: req.params.id, vendorId, status: "rejected" },
+        { $set: { status: "pending", submittedAt: new Date() }, $unset: { reviewNote: "", reviewedAt: "" } },
+        { new: true, lean: true },
+      )) as unknown as LeanProduct | null;
+      if (again) updated = again;
+    }
+    return res.json({ product: toProductView(updated, types) });
+  } catch (error) {
+    console.error("Failed to add a product photo:", error);
+    return res.status(500).json({ message: "We could not save your photo. Please try again." });
+  }
+});
+
+// --- POST /vendor/products/:id/photos/remove  { url }: take one photo off the product (and off Cloudinary)
+router.post("/:id/photos/remove", async (req: Request, res: Response) => {
+  try {
+    const vendorId = currentVendorId(req);
+    if (!vendorId) return res.status(403).json(NO_PROFILE);
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: "Product not found" });
+    const url: unknown = req.body?.url;
+    if (typeof url !== "string" || url.length === 0 || url.length > 500) {
+      return res.status(400).json({ message: "Say which photo to remove.", errors: { photos: "Say which photo to remove." } });
+    }
+    const updated = (await Essentials.findOneAndUpdate(
+      { _id: req.params.id, vendorId, images: url },
+      { $pull: { images: url } },
+      { new: true, lean: true },
+    )) as unknown as LeanProduct | null;
+    if (!updated) {
+      const exists = await Essentials.exists({ _id: req.params.id, vendorId });
+      if (!exists) return res.status(404).json({ message: "Product not found" });
+      return res.status(409).json({ message: "That photo is no longer on this product." });
+    }
+    const config = getCloudinaryConfig();
+    const publicId = config ? publicIdFromUrl(config, url) : null;
+    if (config && publicId && isOwnPhotoId(vendorId, publicId)) void deleteUploadedPhoto(config, publicId);
+    return res.json({ product: toProductView(updated, await loadProductTypes()) });
+  } catch (error) {
+    console.error("Failed to remove a product photo:", error);
+    return res.status(500).json({ message: "We could not remove that photo. Please try again." });
   }
 });
 

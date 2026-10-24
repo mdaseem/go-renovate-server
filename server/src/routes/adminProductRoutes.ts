@@ -84,10 +84,16 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 // Atomic claim of a state change on a vendor-created product; null when it was not in an allowed state.
-async function claim(id: string, fromStatuses: string[], set: Record<string, unknown>, unset: Record<string, ""> = {}) {
+async function claim(
+  id: string,
+  fromStatuses: string[],
+  set: Record<string, unknown>,
+  unset: Record<string, ""> = {},
+  extraFilter: Record<string, unknown> = {},
+) {
   const update: Record<string, unknown> = { $set: set };
   if (Object.keys(unset).length > 0) update.$unset = unset;
-  return Essentials.findOneAndUpdate({ _id: id, ...VENDOR_ONLY, status: { $in: fromStatuses } }, update, {
+  return Essentials.findOneAndUpdate({ _id: id, ...VENDOR_ONLY, status: { $in: fromStatuses }, ...extraFilter }, update, {
     new: true,
     lean: true,
   });
@@ -106,6 +112,11 @@ router.post("/:id/approve", async (req: Request, res: Response) => {
   try {
     if (!validId(req.params.id)) return res.status(404).json({ message: "Product not found" });
     const showInRooms = req.body?.showInRooms === true;
+    // A product needs at least one photo to go live (photo upload shipped 2026-10-24).
+    const waiting = (await Essentials.findOne({ _id: req.params.id, ...VENDOR_ONLY, status: "pending" }, { images: 1 }).lean()) as { images?: string[] } | null;
+    if (waiting && (waiting.images ?? []).filter(Boolean).length === 0) {
+      return res.status(409).json({ message: "This product has no photo yet. Ask the vendor to add one before approving." });
+    }
     const set: Record<string, unknown> = { status: "live", approvedAt: new Date(), reviewedAt: new Date() };
     if (showInRooms) {
       const product = (await Essentials.findOne({ _id: req.params.id, ...VENDOR_ONLY, status: "pending" }, { slot: 1 }).lean()) as { slot?: string } | null;
@@ -115,8 +126,9 @@ router.post("/:id/approve", async (req: Request, res: Response) => {
       }
       set.categorySlugs = rooms;
     }
-    const updated = await claim(req.params.id, ["pending"], set, { reviewNote: "" });
-    if (!updated) return notFoundOrConflict(res, req.params.id, "This product is not waiting for review.");
+    // The photo condition is repeated in the claim so a photo removed at the same moment cannot slip through.
+    const updated = await claim(req.params.id, ["pending"], set, { reviewNote: "" }, { "images.0": { $exists: true } });
+    if (!updated) return notFoundOrConflict(res, req.params.id, "This product is not waiting for review, or its photo was just removed.");
     return respondWith(res, updated);
   } catch (error) {
     console.error("Failed to approve product:", error);

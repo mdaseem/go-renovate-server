@@ -95,12 +95,12 @@ router.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 }));
 // Atomic claim of a state change on a vendor-created product; null when it was not in an allowed state.
-function claim(id, fromStatuses, set, unset = {}) {
+function claim(id, fromStatuses, set, unset = {}, extraFilter = {}) {
     return __awaiter(this, void 0, void 0, function* () {
         const update = { $set: set };
         if (Object.keys(unset).length > 0)
             update.$unset = unset;
-        return essentialModel_1.Essentials.findOneAndUpdate(Object.assign(Object.assign({ _id: id }, VENDOR_ONLY), { status: { $in: fromStatuses } }), update, {
+        return essentialModel_1.Essentials.findOneAndUpdate(Object.assign(Object.assign(Object.assign({ _id: id }, VENDOR_ONLY), { status: { $in: fromStatuses } }), extraFilter), update, {
             new: true,
             lean: true,
         });
@@ -117,23 +117,29 @@ function notFoundOrConflict(res, id, message) {
 const validId = (id) => mongoose_1.default.isValidObjectId(id);
 // --- POST /admin/products/:id/approve  { showInRooms?: boolean }   pending -> live
 router.post("/:id/approve", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
     try {
         if (!validId(req.params.id))
             return res.status(404).json({ message: "Product not found" });
         const showInRooms = ((_a = req.body) === null || _a === void 0 ? void 0 : _a.showInRooms) === true;
+        // A product needs at least one photo to go live (photo upload shipped 2026-10-24).
+        const waiting = (yield essentialModel_1.Essentials.findOne(Object.assign(Object.assign({ _id: req.params.id }, VENDOR_ONLY), { status: "pending" }), { images: 1 }).lean());
+        if (waiting && ((_b = waiting.images) !== null && _b !== void 0 ? _b : []).filter(Boolean).length === 0) {
+            return res.status(409).json({ message: "This product has no photo yet. Ask the vendor to add one before approving." });
+        }
         const set = { status: "live", approvedAt: new Date(), reviewedAt: new Date() };
         if (showInRooms) {
             const product = (yield essentialModel_1.Essentials.findOne(Object.assign(Object.assign({ _id: req.params.id }, VENDOR_ONLY), { status: "pending" }), { slot: 1 }).lean());
-            const rooms = (_d = (_c = (yield (0, productTypes_1.loadProductTypes)()).get((_b = product === null || product === void 0 ? void 0 : product.slot) !== null && _b !== void 0 ? _b : productTypes_1.OTHER_TYPE_ID)) === null || _c === void 0 ? void 0 : _c.rooms) !== null && _d !== void 0 ? _d : [];
+            const rooms = (_e = (_d = (yield (0, productTypes_1.loadProductTypes)()).get((_c = product === null || product === void 0 ? void 0 : product.slot) !== null && _c !== void 0 ? _c : productTypes_1.OTHER_TYPE_ID)) === null || _d === void 0 ? void 0 : _d.rooms) !== null && _e !== void 0 ? _e : [];
             if (product && rooms.length === 0) {
                 return res.status(400).json({ message: "This product type cannot be shown in rooms.", errors: { showInRooms: "Products of type Other cannot be shown in rooms." } });
             }
             set.categorySlugs = rooms;
         }
-        const updated = yield claim(req.params.id, ["pending"], set, { reviewNote: "" });
+        // The photo condition is repeated in the claim so a photo removed at the same moment cannot slip through.
+        const updated = yield claim(req.params.id, ["pending"], set, { reviewNote: "" }, { "images.0": { $exists: true } });
         if (!updated)
-            return notFoundOrConflict(res, req.params.id, "This product is not waiting for review.");
+            return notFoundOrConflict(res, req.params.id, "This product is not waiting for review, or its photo was just removed.");
         return respondWith(res, updated);
     }
     catch (error) {
@@ -143,11 +149,11 @@ router.post("/:id/approve", (req, res) => __awaiter(void 0, void 0, void 0, func
 }));
 // --- POST /admin/products/:id/reject  { reason }   pending -> rejected
 router.post("/:id/reject", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _e;
+    var _f;
     try {
         if (!validId(req.params.id))
             return res.status(404).json({ message: "Product not found" });
-        const reason = (0, vendorProductRules_1.parseReason)((_e = req.body) === null || _e === void 0 ? void 0 : _e.reason);
+        const reason = (0, vendorProductRules_1.parseReason)((_f = req.body) === null || _f === void 0 ? void 0 : _f.reason);
         if (!reason.ok)
             return res.status(400).json({ message: reason.error, errors: { reason: reason.error } });
         const updated = yield claim(req.params.id, ["pending"], { status: "rejected", reviewNote: reason.reason, reviewedAt: new Date() });
@@ -192,17 +198,17 @@ router.post("/:id/resume", (req, res) => __awaiter(void 0, void 0, void 0, funct
 }));
 // --- POST /admin/products/:id/rooms  { enabled: boolean }   show the product in its type's rooms, or take it out
 router.post("/:id/rooms", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _f, _g, _h, _j;
+    var _g, _h, _j, _k;
     try {
         if (!validId(req.params.id))
             return res.status(404).json({ message: "Product not found" });
-        if (typeof ((_f = req.body) === null || _f === void 0 ? void 0 : _f.enabled) !== "boolean") {
+        if (typeof ((_g = req.body) === null || _g === void 0 ? void 0 : _g.enabled) !== "boolean") {
             return res.status(400).json({ message: "Say whether to show it in rooms.", errors: { enabled: "Choose on or off." } });
         }
         const existing = (yield essentialModel_1.Essentials.findOne(Object.assign(Object.assign({ _id: req.params.id }, VENDOR_ONLY), { status: { $in: ["live", "paused"] } }), { slot: 1 }).lean());
         if (!existing)
             return notFoundOrConflict(res, req.params.id, "Approve the product before putting it in rooms.");
-        const rooms = req.body.enabled ? (_j = (_h = (yield (0, productTypes_1.loadProductTypes)()).get((_g = existing.slot) !== null && _g !== void 0 ? _g : productTypes_1.OTHER_TYPE_ID)) === null || _h === void 0 ? void 0 : _h.rooms) !== null && _j !== void 0 ? _j : [] : [];
+        const rooms = req.body.enabled ? (_k = (_j = (yield (0, productTypes_1.loadProductTypes)()).get((_h = existing.slot) !== null && _h !== void 0 ? _h : productTypes_1.OTHER_TYPE_ID)) === null || _j === void 0 ? void 0 : _j.rooms) !== null && _k !== void 0 ? _k : [] : [];
         if (req.body.enabled && rooms.length === 0) {
             return res.status(400).json({ message: "This product type cannot be shown in rooms.", errors: { enabled: "Products of type Other cannot be shown in rooms." } });
         }
