@@ -16,7 +16,7 @@ import {
   PhotoCheck,
   publicIdFromUrl,
 } from "../services/cloudinary";
-import { MAX_PRODUCTS_PER_VENDOR, parseProductInput } from "../services/vendorProductRules";
+import { FIT_ZONES, FitZone, MAX_PRODUCTS_PER_VENDOR, parseProductInput, placementForFit } from "../services/vendorProductRules";
 
 // The vendor's own products: add, edit, pause, resume, duplicate. Every route is vendor-only and works on
 // products whose `vendorId` is the vendor's own, read from the database (requireRole), never from the
@@ -48,7 +48,7 @@ interface LeanProduct {
   stock?: number;
   cutoutUrl?: string;
   dimensionsCm?: { w?: number; h?: number; d?: number };
-  placement?: { zone?: string; layer?: number };
+  placement?: { zone?: string; layer?: number; supports?: boolean };
   status?: string;
   source?: string;
   pausedBy?: string;
@@ -63,6 +63,13 @@ function currentVendorId(req: Request): string | null {
 }
 
 const NO_PROFILE = { message: "Your account is not linked to a vendor profile." };
+
+// The types that ask "How is it fitted?", with the answers each allows.
+function fitOptionsOf(types: Map<string, ProductType>): Map<string, FitZone[]> {
+  const options = new Map<string, FitZone[]>();
+  for (const type of types.values()) if (type.fits) options.set(type.id, type.fits);
+  return options;
+}
 
 export function toProductView(doc: LeanProduct, types: Map<string, ProductType>) {
   const images = (doc.images ?? []).filter(Boolean);
@@ -87,6 +94,8 @@ export function toProductView(doc: LeanProduct, types: Map<string, ProductType>)
     // The vendor's own uploaded photos, in order (the first one is the main picture).
     photos: images,
     inRooms: (doc.categorySlugs ?? []).length > 0,
+    // How the vendor said it is fitted (floor / wall / ceiling / surface); null when the type does not ask.
+    fit: (FIT_ZONES as readonly string[]).includes(doc.placement?.zone ?? "") ? (doc.placement?.zone as FitZone) : null,
     createdByVendor: doc.source === "vendor",
     submittedAt: doc.submittedAt ?? null,
     approvedAt: doc.approvedAt ?? null,
@@ -116,7 +125,7 @@ router.get("/options", async (_req: Request, res: Response) => {
   try {
     const types = await loadProductTypes();
     return res.json({
-      types: Array.from(types.values()).map(({ id, label, icon }) => ({ id, label, icon })),
+      types: Array.from(types.values()).map(({ id, label, icon, fits }) => ({ id, label, icon, ...(fits ? { fits } : {}) })),
       maxProducts: MAX_PRODUCTS_PER_VENDOR,
       photos: {
         enabled: getCloudinaryConfig() !== null,
@@ -173,7 +182,11 @@ router.post("/", async (req: Request, res: Response) => {
     if (!vendorId) return res.status(403).json(NO_PROFILE);
 
     const types = await loadProductTypes();
-    const parsed = parseProductInput(req.body, { mode: "create", allowedTypes: new Set(types.keys()) });
+    const parsed = parseProductInput(req.body, {
+      mode: "create",
+      allowedTypes: new Set(types.keys()),
+      fitOptions: fitOptionsOf(types),
+    });
     if (!parsed.ok) {
       return res.status(400).json({ message: "Please check the details and try again.", errors: parsed.errors });
     }
@@ -186,7 +199,7 @@ router.post("/", async (req: Request, res: Response) => {
       return res.status(429).json({ message: "You are adding products very quickly. Please wait a few minutes and try again." });
     }
 
-    const { name, description, slot, price, stock, dimensionsCm } = parsed.fields;
+    const { name, description, slot, price, stock, dimensionsCm, fit } = parsed.fields;
     const created = await Essentials.create({
       name,
       ...(description ? { description } : {}),
@@ -194,6 +207,7 @@ router.post("/", async (req: Request, res: Response) => {
       price,
       ...(typeof stock === "number" ? { stock } : {}),
       ...(dimensionsCm ? { dimensionsCm } : {}),
+      ...(fit && slot ? { placement: placementForFit(slot, fit) } : {}),
       vendorId,
       images: [],
       categorySlugs: [],
@@ -370,6 +384,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
     const parsed = parseProductInput(req.body, {
       mode: "update",
       allowedTypes: new Set(types.keys()),
+      fitOptions: fitOptionsOf(types),
       existing: { slot: existing.slot, cutoutUrl: existing.cutoutUrl ?? null, placement: existing.placement ?? null },
     });
     if (!parsed.ok) {
@@ -378,7 +393,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
 
     const set: Record<string, unknown> = {};
     const unset: Record<string, ""> = {};
-    const { name, description, slot, price, stock, dimensionsCm } = parsed.fields;
+    const { name, description, slot, price, stock, dimensionsCm, fit } = parsed.fields;
     if (name !== undefined) set.name = name;
     if (description !== undefined) {
       if (description) set.description = description;
@@ -389,6 +404,9 @@ router.patch("/:id", async (req: Request, res: Response) => {
       // A different type no longer fits the rooms the product was in: it leaves them until the owner adds it again.
       if (slot !== existing.slot) set.categorySlugs = [];
     }
+    // How it is fitted: set from the vendor's answer; a type that does not ask for one clears what was stored.
+    if (fit !== undefined) set.placement = placementForFit(slot ?? existing.slot ?? "", fit);
+    else if (slot !== undefined && slot !== existing.slot) unset.placement = "";
     if (price !== undefined) set.price = price;
     if (stock !== undefined) {
       if (stock === null) unset.stock = "";
@@ -492,6 +510,7 @@ router.post("/:id/duplicate", async (req: Request, res: Response) => {
       price: source.price,
       ...(typeof source.stock === "number" ? { stock: source.stock } : {}),
       ...(source.dimensionsCm?.w && source.dimensionsCm?.h ? { dimensionsCm: source.dimensionsCm } : {}),
+      ...(source.placement?.zone ? { placement: source.placement } : {}),
       vendorId,
       images: [],
       categorySlugs: [],

@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.loadProductTypes = exports.OTHER_TYPE_ID = void 0;
 const categoryModel_1 = require("../models/categoryModel");
 const shopCatalogue_1 = require("./shopCatalogue");
+const vendorProductRules_1 = require("./vendorProductRules");
 // The product types a vendor can pick (a "slot": Sofa, Lighting...). They are the slots the room
 // categories already define, plus "Other" for anything else. "Other" products sell in the shop but can
 // never be put into rooms (no room has an "other" slot).
@@ -34,6 +35,11 @@ function loadProductTypes() {
                     types.set(slot.id, { id: slot.id, label: slot.label, icon: (0, shopCatalogue_1.slotIcon)(slot.id), rooms: [category.slug] });
                 }
             }
+        }
+        for (const [id, fits] of Object.entries(vendorProductRules_1.FIT_OPTIONS)) {
+            const type = types.get(id);
+            if (type)
+                type.fits = fits;
         }
         types.set(exports.OTHER_TYPE_ID, { id: exports.OTHER_TYPE_ID, label: "Other", icon: (0, shopCatalogue_1.slotIcon)(exports.OTHER_TYPE_ID), rooms: [] });
         return types;

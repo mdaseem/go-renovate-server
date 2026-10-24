@@ -1,11 +1,30 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseReason = exports.parseProductInput = exports.LIMITS = exports.MAX_PRODUCTS_PER_VENDOR = void 0;
+exports.parseReason = exports.parseProductInput = exports.LIMITS = exports.placementForFit = exports.FIT_OPTIONS = exports.FIT_ZONES = exports.MAX_PRODUCTS_PER_VENDOR = void 0;
 const dimensionRules_1 = require("./dimensionRules");
 // Validation for the product form a vendor fills in (and the owner's edits). Pure functions, no database.
 // Only the fields named here are ever read from a request: status, vendor, photos, cut-out, 3D model and
 // rooms are decided by the server, never copied from the body.
 exports.MAX_PRODUCTS_PER_VENDOR = 200;
+// "How is it fitted?" Where a piece sits in a room. Most product types have one obvious answer (a sofa
+// stands on the floor, a mirror hangs on the wall) and the rooms already know it from the type. These are the
+// types whose answer varies, and the answers a vendor may give for each. The answer is stored as the
+// product's `placement.zone`; the vendor can never send any other placement field.
+exports.FIT_ZONES = ["floor", "wall", "ceiling", "surface"];
+exports.FIT_OPTIONS = {
+    lighting: ["floor", "wall", "ceiling", "surface"],
+    "bedside-table": ["floor", "wall"],
+    storage: ["floor", "wall"],
+    vanity: ["floor", "wall"],
+    accessories: ["surface", "wall"],
+};
+// The placement saved for a product the vendor said how it is fitted. Pieces that hold other things
+// (a bedside table, a vanity) are marked as supports whichever way they are fitted; things that sit on
+// something are drawn in front of it.
+function placementForFit(slot, fit) {
+    return Object.assign({ zone: fit, layer: fit === "surface" ? 2 : 1 }, (slot === "bedside-table" || slot === "vanity" ? { supports: true } : {}));
+}
+exports.placementForFit = placementForFit;
 exports.LIMITS = {
     nameMin: 2,
     nameMax: 100,
@@ -34,7 +53,7 @@ function multiLine(value) {
 }
 const isNumber = (value) => typeof value === "number" && Number.isFinite(value);
 function parseProductInput(body, context) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v;
     const input = (typeof body === "object" && body !== null && !Array.isArray(body) ? body : {});
     const has = (key) => Object.prototype.hasOwnProperty.call(input, key);
     const create = context.mode === "create";
@@ -70,6 +89,31 @@ function parseProductInput(body, context) {
             errors.slot = "Choose what kind of product this is.";
         else
             fields.slot = slot;
+    }
+    // How it is fitted: asked for the types whose place varies, refused for the rest.
+    if (!errors.slot && (create || has("fit") || has("slot"))) {
+        const finalSlot = (_c = (_a = fields.slot) !== null && _a !== void 0 ? _a : (_b = context.existing) === null || _b === void 0 ? void 0 : _b.slot) !== null && _c !== void 0 ? _c : "";
+        const options = (_d = context.fitOptions) === null || _d === void 0 ? void 0 : _d.get(finalSlot);
+        const raw = input.fit;
+        const given = raw !== undefined && raw !== null;
+        if (options) {
+            const slotChanged = has("slot") && fields.slot !== ((_e = context.existing) === null || _e === void 0 ? void 0 : _e.slot);
+            const stored = (_g = (_f = context.existing) === null || _f === void 0 ? void 0 : _f.placement) === null || _g === void 0 ? void 0 : _g.zone;
+            if (!given) {
+                // Needed for a new product, and when the type was changed to one that asks and nothing valid is stored.
+                if (create || (slotChanged && !(stored && options.includes(stored))))
+                    errors.fit = "Choose how it is fitted.";
+            }
+            else if (typeof raw === "string" && options.includes(raw)) {
+                fields.fit = raw;
+            }
+            else {
+                errors.fit = "Choose how it is fitted.";
+            }
+        }
+        else if (given) {
+            errors.fit = "This type of product does not need that.";
+        }
     }
     if (create || has("price")) {
         const price = input.price;
@@ -116,13 +160,14 @@ function parseProductInput(body, context) {
     // The same plausibility check the seed and the model use: a sofa typed in inches is refused, an
     // unusual-but-possible size only warns. Checked against the final slot and the product's own picture.
     if (has("dimensionsCm") && !errors.dimensionsCm && !errors.slot) {
-        const slot = (_c = (_a = fields.slot) !== null && _a !== void 0 ? _a : (_b = context.existing) === null || _b === void 0 ? void 0 : _b.slot) !== null && _c !== void 0 ? _c : "";
-        const zone = ((_f = (_e = (_d = context.existing) === null || _d === void 0 ? void 0 : _d.placement) === null || _e === void 0 ? void 0 : _e.zone) !== null && _f !== void 0 ? _f : "floor");
+        const slot = (_k = (_h = fields.slot) !== null && _h !== void 0 ? _h : (_j = context.existing) === null || _j === void 0 ? void 0 : _j.slot) !== null && _k !== void 0 ? _k : "";
+        // A light that hangs on the wall is checked as a wall light, not as a floor lamp.
+        const zone = ((_p = (_l = fields.fit) !== null && _l !== void 0 ? _l : (_o = (_m = context.existing) === null || _m === void 0 ? void 0 : _m.placement) === null || _o === void 0 ? void 0 : _o.zone) !== null && _p !== void 0 ? _p : "floor");
         const result = (0, dimensionRules_1.validateDimensions)({
             slot,
-            cutoutUrl: (_h = (_g = context.existing) === null || _g === void 0 ? void 0 : _g.cutoutUrl) !== null && _h !== void 0 ? _h : null,
-            dimensionsCm: (_j = fields.dimensionsCm) !== null && _j !== void 0 ? _j : null,
-            placement: { zone, layer: (_m = (_l = (_k = context.existing) === null || _k === void 0 ? void 0 : _k.placement) === null || _l === void 0 ? void 0 : _l.layer) !== null && _m !== void 0 ? _m : null },
+            cutoutUrl: (_r = (_q = context.existing) === null || _q === void 0 ? void 0 : _q.cutoutUrl) !== null && _r !== void 0 ? _r : null,
+            dimensionsCm: (_s = fields.dimensionsCm) !== null && _s !== void 0 ? _s : null,
+            placement: { zone, layer: (_v = (_u = (_t = context.existing) === null || _t === void 0 ? void 0 : _t.placement) === null || _u === void 0 ? void 0 : _u.layer) !== null && _v !== void 0 ? _v : null },
         });
         if (result.errors.length > 0)
             errors.dimensionsCm = result.errors[0].message;
