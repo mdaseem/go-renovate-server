@@ -21,18 +21,24 @@ const essentialModel_1 = require("../models/essentialModel");
 const productVisibility_1 = require("../services/productVisibility");
 const productTypes_1 = require("../services/productTypes");
 const rateWindow_1 = require("../services/rateWindow");
+const cloudinary_1 = require("../services/cloudinary");
 const vendorProductRules_1 = require("../services/vendorProductRules");
 // The vendor's own products: add, edit, pause, resume, duplicate. Every route is vendor-only and works on
 // products whose `vendorId` is the vendor's own, read from the database (requireRole), never from the
 // request. A new product starts "pending" and is not public until the owner approves it
-// (routes/adminProductRoutes.ts). Photos are not part of this yet: a product has none and the pages draw
-// the default placeholder (the photo step comes later).
+// (routes/adminProductRoutes.ts). Photos: the phone uploads straight to Cloudinary with a ticket from
+// POST /photo-ticket, then POST /:id/photos asks Cloudinary what arrived and saves the address
+// (services/cloudinary.ts). A product without photos shows the default placeholder.
 const router = express_1.default.Router();
 router.use(authMiddleware_1.requireAuth, (0, requireRole_1.requireRole)("vendor"));
 const DEFAULT_PAGE_SIZE = 30;
 const MAX_PAGE_SIZE = 50;
 // Creating (or duplicating) products: 30 an hour per vendor.
 const createWindow = (0, rateWindow_1.makeRateWindow)(30, 60 * 60 * 1000);
+// Photos: upload tickets and attach checks, per vendor per hour. The attach check calls Cloudinary's
+// admin API, which has a small hourly quota for the whole account, so keep these modest.
+const ticketWindow = (0, rateWindow_1.makeRateWindow)(40, 60 * 60 * 1000);
+const attachWindow = (0, rateWindow_1.makeRateWindow)(40, 60 * 60 * 1000);
 function currentVendorId(req) {
     const { vendorId } = req.currentUser;
     return typeof vendorId === "string" && vendorId ? vendorId : null;
@@ -59,6 +65,8 @@ function toProductView(doc, types) {
         reviewNote: (_p = doc.reviewNote) !== null && _p !== void 0 ? _p : "",
         hasPhoto: Boolean(imageUrl),
         imageUrl,
+        // The vendor's own uploaded photos, in order (the first one is the main picture).
+        photos: images,
         inRooms: ((_q = doc.categorySlugs) !== null && _q !== void 0 ? _q : []).length > 0,
         createdByVendor: doc.source === "vendor",
         submittedAt: (_r = doc.submittedAt) !== null && _r !== void 0 ? _r : null,
@@ -95,6 +103,12 @@ router.get("/options", (_req, res) => __awaiter(void 0, void 0, void 0, function
         return res.json({
             types: Array.from(types.values()).map(({ id, label, icon }) => ({ id, label, icon })),
             maxProducts: vendorProductRules_1.MAX_PRODUCTS_PER_VENDOR,
+            photos: {
+                enabled: (0, cloudinary_1.getCloudinaryConfig)() !== null,
+                maxPerProduct: cloudinary_1.PHOTO_LIMITS.maxPerProduct,
+                maxBytes: cloudinary_1.PHOTO_LIMITS.maxBytes,
+                minSide: cloudinary_1.PHOTO_LIMITS.minSide,
+            },
         });
     }
     catch (error) {
@@ -166,6 +180,132 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(500).json({ message: "We could not save your product. Please try again." });
     }
 }));
+// --- POST /vendor/products/photo-ticket: permission to upload ONE photo into the vendor's own folder
+// Needs no product yet, so photos can be picked while the form is still being filled in.
+router.post("/photo-ticket", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const vendorId = currentVendorId(req);
+        if (!vendorId)
+            return res.status(403).json(NO_PROFILE);
+        const config = (0, cloudinary_1.getCloudinaryConfig)();
+        if (!config)
+            return res.status(503).json({ message: "Photo upload is not available right now. Please try again later." });
+        if (!ticketWindow.take(vendorId)) {
+            return res.status(429).json({ message: "You are uploading photos very quickly. Please wait a few minutes and try again." });
+        }
+        const ticket = (0, cloudinary_1.createUploadTicket)(config, vendorId);
+        if (!ticket)
+            return res.status(403).json(NO_PROFILE);
+        res.set("Cache-Control", "no-store");
+        return res.json(ticket);
+    }
+    catch (error) {
+        console.error("Failed to create a photo ticket:", error);
+        return res.status(500).json({ message: "We could not start the upload. Please try again." });
+    }
+}));
+const PHOTO_PROBLEMS = {
+    missing: { status: 400, message: "We couldn't find that photo. Please upload it again." },
+    format: { status: 400, message: "Photos must be JPG, PNG or WebP." },
+    size: { status: 400, message: `That photo is too large. The limit is ${cloudinary_1.PHOTO_LIMITS.maxBytes / (1024 * 1024)} MB.` },
+    dimensions: {
+        status: 400,
+        message: `Photos must be between ${cloudinary_1.PHOTO_LIMITS.minSide} and ${cloudinary_1.PHOTO_LIMITS.maxSide} pixels on each side.`,
+    },
+    unavailable: { status: 502, message: "We couldn't check your photo right now. Please try again." },
+};
+// --- POST /vendor/products/:id/photos  { publicId }: add an uploaded photo to the product
+// The id must sit in this vendor's own folder; Cloudinary is asked what it really holds there, and the
+// address saved comes from its answer. Repeating the same call changes nothing.
+router.post("/:id/photos", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c;
+    try {
+        const vendorId = currentVendorId(req);
+        if (!vendorId)
+            return res.status(403).json(NO_PROFILE);
+        if (!mongoose_1.default.isValidObjectId(req.params.id))
+            return res.status(404).json({ message: "Product not found" });
+        const config = (0, cloudinary_1.getCloudinaryConfig)();
+        if (!config)
+            return res.status(503).json({ message: "Photo upload is not available right now. Please try again later." });
+        const publicId = (_a = req.body) === null || _a === void 0 ? void 0 : _a.publicId;
+        if (!(0, cloudinary_1.isOwnPhotoId)(vendorId, publicId)) {
+            return res.status(400).json({ message: "That photo doesn't belong to your account.", errors: { photos: "Upload the photo again." } });
+        }
+        const existing = (yield essentialModel_1.Essentials.findOne({ _id: req.params.id, vendorId }, { images: 1 }).lean());
+        if (!existing)
+            return res.status(404).json({ message: "Product not found" });
+        if (((_b = existing.images) !== null && _b !== void 0 ? _b : []).length >= cloudinary_1.PHOTO_LIMITS.maxPerProduct) {
+            return res.status(409).json({ message: `A product can have up to ${cloudinary_1.PHOTO_LIMITS.maxPerProduct} photos.` });
+        }
+        if (!attachWindow.take(vendorId)) {
+            return res.status(429).json({ message: "You are adding photos very quickly. Please wait a few minutes and try again." });
+        }
+        const check = yield (0, cloudinary_1.checkUploadedPhoto)(config, publicId);
+        if (!check.ok) {
+            const problem = PHOTO_PROBLEMS[check.reason];
+            // A file that arrived but breaks the rules is removed so it does not sit in the account unused.
+            if (check.reason === "format" || check.reason === "size" || check.reason === "dimensions") {
+                void (0, cloudinary_1.deleteUploadedPhoto)(config, publicId);
+            }
+            return res.status(problem.status).json({ message: problem.message, errors: { photos: problem.message } });
+        }
+        const types = yield (0, productTypes_1.loadProductTypes)();
+        const lastSlot = cloudinary_1.PHOTO_LIMITS.maxPerProduct - 1;
+        let updated = (yield essentialModel_1.Essentials.findOneAndUpdate({ _id: req.params.id, vendorId, images: { $ne: check.url }, [`images.${lastSlot}`]: { $exists: false } }, { $push: { images: check.url } }, { new: true, lean: true }));
+        if (!updated) {
+            // Already attached (a repeat of the same call) or the limit was reached by a parallel upload.
+            const current = (yield essentialModel_1.Essentials.findOne({ _id: req.params.id, vendorId }).lean());
+            if (!current)
+                return res.status(404).json({ message: "Product not found" });
+            if (((_c = current.images) !== null && _c !== void 0 ? _c : []).includes(check.url))
+                return res.json({ product: toProductView(current, types) });
+            return res.status(409).json({ message: `A product can have up to ${cloudinary_1.PHOTO_LIMITS.maxPerProduct} photos.` });
+        }
+        // Like any other edit, a photo added to a product the owner sent back puts it in review again.
+        if (updated.status === "rejected") {
+            const again = (yield essentialModel_1.Essentials.findOneAndUpdate({ _id: req.params.id, vendorId, status: "rejected" }, { $set: { status: "pending", submittedAt: new Date() }, $unset: { reviewNote: "", reviewedAt: "" } }, { new: true, lean: true }));
+            if (again)
+                updated = again;
+        }
+        return res.json({ product: toProductView(updated, types) });
+    }
+    catch (error) {
+        console.error("Failed to add a product photo:", error);
+        return res.status(500).json({ message: "We could not save your photo. Please try again." });
+    }
+}));
+// --- POST /vendor/products/:id/photos/remove  { url }: take one photo off the product (and off Cloudinary)
+router.post("/:id/photos/remove", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _d;
+    try {
+        const vendorId = currentVendorId(req);
+        if (!vendorId)
+            return res.status(403).json(NO_PROFILE);
+        if (!mongoose_1.default.isValidObjectId(req.params.id))
+            return res.status(404).json({ message: "Product not found" });
+        const url = (_d = req.body) === null || _d === void 0 ? void 0 : _d.url;
+        if (typeof url !== "string" || url.length === 0 || url.length > 500) {
+            return res.status(400).json({ message: "Say which photo to remove.", errors: { photos: "Say which photo to remove." } });
+        }
+        const updated = (yield essentialModel_1.Essentials.findOneAndUpdate({ _id: req.params.id, vendorId, images: url }, { $pull: { images: url } }, { new: true, lean: true }));
+        if (!updated) {
+            const exists = yield essentialModel_1.Essentials.exists({ _id: req.params.id, vendorId });
+            if (!exists)
+                return res.status(404).json({ message: "Product not found" });
+            return res.status(409).json({ message: "That photo is no longer on this product." });
+        }
+        const config = (0, cloudinary_1.getCloudinaryConfig)();
+        const publicId = config ? (0, cloudinary_1.publicIdFromUrl)(config, url) : null;
+        if (config && publicId && (0, cloudinary_1.isOwnPhotoId)(vendorId, publicId))
+            void (0, cloudinary_1.deleteUploadedPhoto)(config, publicId);
+        return res.json({ product: toProductView(updated, yield (0, productTypes_1.loadProductTypes)()) });
+    }
+    catch (error) {
+        console.error("Failed to remove a product photo:", error);
+        return res.status(500).json({ message: "We could not remove that photo. Please try again." });
+    }
+}));
 // --- GET /vendor/products/:id
 router.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -190,7 +330,7 @@ router.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 // --- PATCH /vendor/products/:id: change any of name, description, type, price, stock, size
 // Price and stock changes are live at once. A rejected product that is edited goes back to review.
 router.patch("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _e, _f;
     try {
         const vendorId = currentVendorId(req);
         if (!vendorId)
@@ -206,7 +346,7 @@ router.patch("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const parsed = (0, vendorProductRules_1.parseProductInput)(req.body, {
             mode: "update",
             allowedTypes: new Set(types.keys()),
-            existing: { slot: existing.slot, cutoutUrl: (_a = existing.cutoutUrl) !== null && _a !== void 0 ? _a : null, placement: (_b = existing.placement) !== null && _b !== void 0 ? _b : null },
+            existing: { slot: existing.slot, cutoutUrl: (_e = existing.cutoutUrl) !== null && _e !== void 0 ? _e : null, placement: (_f = existing.placement) !== null && _f !== void 0 ? _f : null },
         });
         if (!parsed.ok) {
             return res.status(400).json({ message: "Please check the details and try again.", errors: parsed.errors });
@@ -311,7 +451,7 @@ router.post("/:id/resume", (req, res) => __awaiter(void 0, void 0, void 0, funct
 }));
 // --- POST /vendor/products/:id/duplicate: a copy (for another colour or size) that goes to review
 router.post("/:id/duplicate", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _c, _d, _e;
+    var _g, _h, _j;
     try {
         const vendorId = currentVendorId(req);
         if (!vendorId)
@@ -330,8 +470,8 @@ router.post("/:id/duplicate", (req, res) => __awaiter(void 0, void 0, void 0, fu
         }
         // Only the facts a vendor typed are copied: not the photos, cut-out, 3D model, rooms or review history.
         const suffix = " (copy)";
-        const name = `${((_c = source.name) !== null && _c !== void 0 ? _c : "").slice(0, 100 - suffix.length)}${suffix}`;
-        const copy = yield essentialModel_1.Essentials.create(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ name }, (source.description ? { description: source.description } : {})), { slot: source.slot, price: source.price }), (typeof source.stock === "number" ? { stock: source.stock } : {})), (((_d = source.dimensionsCm) === null || _d === void 0 ? void 0 : _d.w) && ((_e = source.dimensionsCm) === null || _e === void 0 ? void 0 : _e.h) ? { dimensionsCm: source.dimensionsCm } : {})), { vendorId, images: [], categorySlugs: [], purchaseMode: "on-platform", status: "pending", source: "vendor", submittedAt: new Date() }));
+        const name = `${((_g = source.name) !== null && _g !== void 0 ? _g : "").slice(0, 100 - suffix.length)}${suffix}`;
+        const copy = yield essentialModel_1.Essentials.create(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ name }, (source.description ? { description: source.description } : {})), { slot: source.slot, price: source.price }), (typeof source.stock === "number" ? { stock: source.stock } : {})), (((_h = source.dimensionsCm) === null || _h === void 0 ? void 0 : _h.w) && ((_j = source.dimensionsCm) === null || _j === void 0 ? void 0 : _j.h) ? { dimensionsCm: source.dimensionsCm } : {})), { vendorId, images: [], categorySlugs: [], purchaseMode: "on-platform", status: "pending", source: "vendor", submittedAt: new Date() }));
         return res.status(201).json({ product: toProductView(copy.toObject(), yield (0, productTypes_1.loadProductTypes)()) });
     }
     catch (error) {
