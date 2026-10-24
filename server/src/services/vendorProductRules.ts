@@ -5,6 +5,31 @@ import { validateDimensions } from "./dimensionRules";
 // rooms are decided by the server, never copied from the body.
 
 export const MAX_PRODUCTS_PER_VENDOR = 200;
+
+// "How is it fitted?" Where a piece sits in a room. Most product types have one obvious answer (a sofa
+// stands on the floor, a mirror hangs on the wall) and the rooms already know it from the type. These are the
+// types whose answer varies, and the answers a vendor may give for each. The answer is stored as the
+// product's `placement.zone`; the vendor can never send any other placement field.
+export const FIT_ZONES = ["floor", "wall", "ceiling", "surface"] as const;
+export type FitZone = (typeof FIT_ZONES)[number];
+export const FIT_OPTIONS: Record<string, FitZone[]> = {
+  lighting: ["floor", "wall", "ceiling", "surface"],
+  "bedside-table": ["floor", "wall"],
+  storage: ["floor", "wall"],
+  vanity: ["floor", "wall"],
+  accessories: ["surface", "wall"],
+};
+
+// The placement saved for a product the vendor said how it is fitted. Pieces that hold other things
+// (a bedside table, a vanity) are marked as supports whichever way they are fitted; things that sit on
+// something are drawn in front of it.
+export function placementForFit(slot: string, fit: FitZone) {
+  return {
+    zone: fit,
+    layer: fit === "surface" ? 2 : 1,
+    ...(slot === "bedside-table" || slot === "vanity" ? { supports: true } : {}),
+  };
+}
 export const LIMITS = {
   nameMin: 2,
   nameMax: 100,
@@ -32,6 +57,8 @@ export interface ProductFields {
   // null = not tracked (always available).
   stock: number | null;
   dimensionsCm: ProductSize | null;
+  // Only for the types that ask (FIT_OPTIONS).
+  fit: FitZone;
 }
 
 // What the existing product already has, so a size can be checked against its type and its picture.
@@ -66,7 +93,13 @@ const isNumber = (value: unknown): value is number => typeof value === "number" 
 
 export function parseProductInput(
   body: unknown,
-  context: { mode: "create" | "update"; allowedTypes: Set<string>; existing?: ExistingProduct },
+  context: {
+    mode: "create" | "update";
+    allowedTypes: Set<string>;
+    // type id -> the "how is it fitted" answers it asks for (types missing here do not ask)
+    fitOptions?: Map<string, FitZone[]>;
+    existing?: ExistingProduct;
+  },
 ): ParsedProduct {
   const input = (typeof body === "object" && body !== null && !Array.isArray(body) ? body : {}) as Record<
     string,
@@ -101,6 +134,28 @@ export function parseProductInput(
     const slot = typeof input.slot === "string" ? input.slot : "";
     if (!context.allowedTypes.has(slot)) errors.slot = "Choose what kind of product this is.";
     else fields.slot = slot;
+  }
+
+  // How it is fitted: asked for the types whose place varies, refused for the rest.
+  if (!errors.slot && (create || has("fit") || has("slot"))) {
+    const finalSlot = fields.slot ?? context.existing?.slot ?? "";
+    const options = context.fitOptions?.get(finalSlot);
+    const raw = input.fit;
+    const given = raw !== undefined && raw !== null;
+    if (options) {
+      const slotChanged = has("slot") && fields.slot !== context.existing?.slot;
+      const stored = context.existing?.placement?.zone as FitZone | null | undefined;
+      if (!given) {
+        // Needed for a new product, and when the type was changed to one that asks and nothing valid is stored.
+        if (create || (slotChanged && !(stored && options.includes(stored)))) errors.fit = "Choose how it is fitted.";
+      } else if (typeof raw === "string" && (options as string[]).includes(raw)) {
+        fields.fit = raw as FitZone;
+      } else {
+        errors.fit = "Choose how it is fitted.";
+      }
+    } else if (given) {
+      errors.fit = "This type of product does not need that.";
+    }
   }
 
   if (create || has("price")) {
@@ -144,7 +199,8 @@ export function parseProductInput(
   // unusual-but-possible size only warns. Checked against the final slot and the product's own picture.
   if (has("dimensionsCm") && !errors.dimensionsCm && !errors.slot) {
     const slot = fields.slot ?? context.existing?.slot ?? "";
-    const zone = (context.existing?.placement?.zone ?? "floor") as "floor" | "wall" | "ceiling" | "surface";
+    // A light that hangs on the wall is checked as a wall light, not as a floor lamp.
+    const zone = (fields.fit ?? context.existing?.placement?.zone ?? "floor") as "floor" | "wall" | "ceiling" | "surface";
     const result = validateDimensions({
       slot,
       cutoutUrl: context.existing?.cutoutUrl ?? null,

@@ -44,8 +44,16 @@ function currentVendorId(req) {
     return typeof vendorId === "string" && vendorId ? vendorId : null;
 }
 const NO_PROFILE = { message: "Your account is not linked to a vendor profile." };
+// The types that ask "How is it fitted?", with the answers each allows.
+function fitOptionsOf(types) {
+    const options = new Map();
+    for (const type of types.values())
+        if (type.fits)
+            options.set(type.id, type.fits);
+    return options;
+}
 function toProductView(doc, types) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v;
     const images = ((_a = doc.images) !== null && _a !== void 0 ? _a : []).filter(Boolean);
     const imageUrl = (_c = (_b = images[0]) !== null && _b !== void 0 ? _b : doc.cutoutUrl) !== null && _c !== void 0 ? _c : null;
     const type = types.get((_d = doc.slot) !== null && _d !== void 0 ? _d : "");
@@ -68,9 +76,11 @@ function toProductView(doc, types) {
         // The vendor's own uploaded photos, in order (the first one is the main picture).
         photos: images,
         inRooms: ((_q = doc.categorySlugs) !== null && _q !== void 0 ? _q : []).length > 0,
+        // How the vendor said it is fitted (floor / wall / ceiling / surface); null when the type does not ask.
+        fit: vendorProductRules_1.FIT_ZONES.includes((_s = (_r = doc.placement) === null || _r === void 0 ? void 0 : _r.zone) !== null && _s !== void 0 ? _s : "") ? (_t = doc.placement) === null || _t === void 0 ? void 0 : _t.zone : null,
         createdByVendor: doc.source === "vendor",
-        submittedAt: (_r = doc.submittedAt) !== null && _r !== void 0 ? _r : null,
-        approvedAt: (_s = doc.approvedAt) !== null && _s !== void 0 ? _s : null,
+        submittedAt: (_u = doc.submittedAt) !== null && _u !== void 0 ? _u : null,
+        approvedAt: (_v = doc.approvedAt) !== null && _v !== void 0 ? _v : null,
         createdAt: doc._id.getTimestamp(),
     };
 }
@@ -101,7 +111,7 @@ router.get("/options", (_req, res) => __awaiter(void 0, void 0, void 0, function
     try {
         const types = yield (0, productTypes_1.loadProductTypes)();
         return res.json({
-            types: Array.from(types.values()).map(({ id, label, icon }) => ({ id, label, icon })),
+            types: Array.from(types.values()).map(({ id, label, icon, fits }) => (Object.assign({ id, label, icon }, (fits ? { fits } : {})))),
             maxProducts: vendorProductRules_1.MAX_PRODUCTS_PER_VENDOR,
             photos: {
                 enabled: (0, cloudinary_1.getCloudinaryConfig)() !== null,
@@ -159,7 +169,11 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!vendorId)
             return res.status(403).json(NO_PROFILE);
         const types = yield (0, productTypes_1.loadProductTypes)();
-        const parsed = (0, vendorProductRules_1.parseProductInput)(req.body, { mode: "create", allowedTypes: new Set(types.keys()) });
+        const parsed = (0, vendorProductRules_1.parseProductInput)(req.body, {
+            mode: "create",
+            allowedTypes: new Set(types.keys()),
+            fitOptions: fitOptionsOf(types),
+        });
         if (!parsed.ok) {
             return res.status(400).json({ message: "Please check the details and try again.", errors: parsed.errors });
         }
@@ -170,9 +184,9 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!createWindow.take(vendorId)) {
             return res.status(429).json({ message: "You are adding products very quickly. Please wait a few minutes and try again." });
         }
-        const { name, description, slot, price, stock, dimensionsCm } = parsed.fields;
-        const created = yield essentialModel_1.Essentials.create(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ name }, (description ? { description } : {})), { slot,
-            price }), (typeof stock === "number" ? { stock } : {})), (dimensionsCm ? { dimensionsCm } : {})), { vendorId, images: [], categorySlugs: [], purchaseMode: "on-platform", status: "pending", source: "vendor", submittedAt: new Date() }));
+        const { name, description, slot, price, stock, dimensionsCm, fit } = parsed.fields;
+        const created = yield essentialModel_1.Essentials.create(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ name }, (description ? { description } : {})), { slot,
+            price }), (typeof stock === "number" ? { stock } : {})), (dimensionsCm ? { dimensionsCm } : {})), (fit && slot ? { placement: (0, vendorProductRules_1.placementForFit)(slot, fit) } : {})), { vendorId, images: [], categorySlugs: [], purchaseMode: "on-platform", status: "pending", source: "vendor", submittedAt: new Date() }));
         return res.status(201).json({ product: toProductView(created.toObject(), types), warnings: parsed.warnings });
     }
     catch (error) {
@@ -330,7 +344,7 @@ router.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 // --- PATCH /vendor/products/:id: change any of name, description, type, price, stock, size
 // Price and stock changes are live at once. A rejected product that is edited goes back to review.
 router.patch("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _e, _f;
+    var _e, _f, _g;
     try {
         const vendorId = currentVendorId(req);
         if (!vendorId)
@@ -346,6 +360,7 @@ router.patch("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const parsed = (0, vendorProductRules_1.parseProductInput)(req.body, {
             mode: "update",
             allowedTypes: new Set(types.keys()),
+            fitOptions: fitOptionsOf(types),
             existing: { slot: existing.slot, cutoutUrl: (_e = existing.cutoutUrl) !== null && _e !== void 0 ? _e : null, placement: (_f = existing.placement) !== null && _f !== void 0 ? _f : null },
         });
         if (!parsed.ok) {
@@ -353,7 +368,7 @@ router.patch("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* (
         }
         const set = {};
         const unset = {};
-        const { name, description, slot, price, stock, dimensionsCm } = parsed.fields;
+        const { name, description, slot, price, stock, dimensionsCm, fit } = parsed.fields;
         if (name !== undefined)
             set.name = name;
         if (description !== undefined) {
@@ -368,6 +383,11 @@ router.patch("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* (
             if (slot !== existing.slot)
                 set.categorySlugs = [];
         }
+        // How it is fitted: set from the vendor's answer; a type that does not ask for one clears what was stored.
+        if (fit !== undefined)
+            set.placement = (0, vendorProductRules_1.placementForFit)((_g = slot !== null && slot !== void 0 ? slot : existing.slot) !== null && _g !== void 0 ? _g : "", fit);
+        else if (slot !== undefined && slot !== existing.slot)
+            unset.placement = "";
         if (price !== undefined)
             set.price = price;
         if (stock !== undefined) {
@@ -451,7 +471,7 @@ router.post("/:id/resume", (req, res) => __awaiter(void 0, void 0, void 0, funct
 }));
 // --- POST /vendor/products/:id/duplicate: a copy (for another colour or size) that goes to review
 router.post("/:id/duplicate", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _g, _h, _j;
+    var _h, _j, _k, _l;
     try {
         const vendorId = currentVendorId(req);
         if (!vendorId)
@@ -470,8 +490,8 @@ router.post("/:id/duplicate", (req, res) => __awaiter(void 0, void 0, void 0, fu
         }
         // Only the facts a vendor typed are copied: not the photos, cut-out, 3D model, rooms or review history.
         const suffix = " (copy)";
-        const name = `${((_g = source.name) !== null && _g !== void 0 ? _g : "").slice(0, 100 - suffix.length)}${suffix}`;
-        const copy = yield essentialModel_1.Essentials.create(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ name }, (source.description ? { description: source.description } : {})), { slot: source.slot, price: source.price }), (typeof source.stock === "number" ? { stock: source.stock } : {})), (((_h = source.dimensionsCm) === null || _h === void 0 ? void 0 : _h.w) && ((_j = source.dimensionsCm) === null || _j === void 0 ? void 0 : _j.h) ? { dimensionsCm: source.dimensionsCm } : {})), { vendorId, images: [], categorySlugs: [], purchaseMode: "on-platform", status: "pending", source: "vendor", submittedAt: new Date() }));
+        const name = `${((_h = source.name) !== null && _h !== void 0 ? _h : "").slice(0, 100 - suffix.length)}${suffix}`;
+        const copy = yield essentialModel_1.Essentials.create(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ name }, (source.description ? { description: source.description } : {})), { slot: source.slot, price: source.price }), (typeof source.stock === "number" ? { stock: source.stock } : {})), (((_j = source.dimensionsCm) === null || _j === void 0 ? void 0 : _j.w) && ((_k = source.dimensionsCm) === null || _k === void 0 ? void 0 : _k.h) ? { dimensionsCm: source.dimensionsCm } : {})), (((_l = source.placement) === null || _l === void 0 ? void 0 : _l.zone) ? { placement: source.placement } : {})), { vendorId, images: [], categorySlugs: [], purchaseMode: "on-platform", status: "pending", source: "vendor", submittedAt: new Date() }));
         return res.status(201).json({ product: toProductView(copy.toObject(), yield (0, productTypes_1.loadProductTypes)()) });
     }
     catch (error) {
